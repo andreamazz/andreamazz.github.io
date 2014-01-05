@@ -4,11 +4,11 @@
   <title><![CDATA[UICode]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-01-05T20:59:16+01:00</updated>
+  <updated>2014-01-05T21:38:01+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
-    
+    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
