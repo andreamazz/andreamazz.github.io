@@ -1,23 +1,23 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
-        <loc>http://yoursite.com/blog/2013/11/10/open-for-business/</loc>
+        <loc>http://andreamazz.github.io/blog/2013/11/10/open-for-business/</loc>
         <lastmod>2014-01-05T14:43:46+01:00</lastmod>
     </url>
     <url>
-        <loc>http://yoursite.com/blog/archives/</loc>
+        <loc>http://andreamazz.github.io/blog/archives/</loc>
         <lastmod>2014-01-05T14:43:46+01:00</lastmod>
     </url>
     <url>
-        <loc>http://yoursite.com/blog/categories/</loc>
+        <loc>http://andreamazz.github.io/blog/categories/</loc>
         <lastmod>2013-11-10T18:21:59+01:00</lastmod>
     </url>
     <url>
-        <loc>http://yoursite.com/</loc>
+        <loc>http://andreamazz.github.io/</loc>
         <lastmod>2014-01-05T14:43:46+01:00</lastmod>
     </url>
     <url>
-        <loc>http://yoursite.com/robots.txt</loc>
+        <loc>http://andreamazz.github.io/robots.txt</loc>
         <lastmod>2013-11-10T18:18:27+01:00</lastmod>
     </url>
 </urlset>
