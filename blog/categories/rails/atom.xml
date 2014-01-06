@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rails | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/rails/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-01-06T12:29:36+01:00</updated>
+  <updated>2014-01-06T12:43:06+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -50,7 +50,7 @@
 </span><span class='line'><span class="sr">  gem &amp;lsquo;capybara&amp;rsquo;</span>
 </span><span class='line'><span class="sr">  gem &amp;lsquo;poltergeist&amp;rsquo;</span>
 </span><span class='line'><span class="sr">  gem &amp;lsquo;database_cleaner&amp;rsquo;  # DatabaseCleaner required to test user authentication protected routes</span>
-</span><span class='line'><span class="sr">  gem &amp;lsquo;launchy&amp;rsquo;</span>
+</span><span class='line'><span class="sr">  gem &amp;lsquo;launchy&amp;rsquo; # Provides the awesome save_and_open_page method in your capybara specs</span>
 </span><span class='line'><span class="sr">end</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
