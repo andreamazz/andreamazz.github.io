@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[UICode]]></title>
+  <title><![CDATA[Syntax Error]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-01-05T21:38:01+01:00</updated>
+  <updated>2014-01-06T11:35:08+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -279,7 +279,7 @@
 <!-- more -->
 
 
-<p>I&rsquo;m a software engineer, and as you can guess from the blog&rsquo;s name I&rsquo;m mostly an iOS developer, but I also like to mix stuff up with Ruby and occasionally Android.  I&rsquo;m a co-founder of <a href="http://www.fancypixel.it">Fancy Pixel</a> where I work as developer. In the past I published some work as <a href="http://www.eflatgames.com">Eflat Games</a>. Also you&rsquo;ll find all my opensource projects on <a href="http://www.github.com/andreamazz">Github</a>.</p>
+<p>I&rsquo;m a software engineer, I work most of my time with Objective-C, but I also like to mix stuff up with Ruby and occasionally Android.  I&rsquo;m a co-founder of <a href="http://www.fancypixel.it">Fancy Pixel</a> where I work as developer. In the past I published some work as <a href="http://www.eflatgames.com">Eflat Games</a>. Also you&rsquo;ll find all my opensource projects on <a href="http://www.github.com/andreamazz">Github</a>.</p>
 
 <p>Cheers,
 Andrea.</p>
