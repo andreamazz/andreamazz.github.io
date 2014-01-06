@@ -21,7 +21,7 @@ group :test do
   gem 'capybara'
   gem 'poltergeist'
   gem 'database_cleaner'  # DatabaseCleaner required to test user authentication protected routes
-  gem 'launchy'
+  gem 'launchy' # Provides the awesome save_and_open_page method in your capybara specs
 end
 {% endcodeblock %}
 
