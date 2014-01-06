@@ -1,0 +1,475 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>iOS Test Setup - Syntax Error</title>
+  <meta name="author" content="Andrea Mazzini">
+
+  
+  <meta name="description" content="Yesterday I wrote an article with my Rails test setup, so it&rsquo;s right about the time to do the same for iOS. I&rsquo;ll be covering Specta, &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://andreamazz.github.io/blog/2014/01/06/ios-test-setup/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="" rel="alternate" title="Syntax Error" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Lobster" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-42282237-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <header role="banner"><hgroup>
+  <h1><a href="/">Syntax Error</a></h1>
+  
+    <h2>Random thoughts and snippets</h2>
+  
+</hgroup>
+
+</header>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:andreamazz.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">iOS Test Setup</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-06T14:39:00+01:00" pubdate data-updated="true">Jan 6<span>th</span>, 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Yesterday I wrote an article with my Rails test setup, so it&rsquo;s right about the time to do the same for iOS. I&rsquo;ll be covering Specta, Expecta and KIF, plus OHHTTPStubs for&hellip; you know&hellip; stubs.</p>
+
+<!-- more -->
+
+
+<p>First thing first, as you can see from the previous post, I&rsquo;m not really into Cucumber. I have more of a <em>dev-first</em> approach for specs. That&rsquo;s the benefit of working on your own projects: you only have to explain things to yourself, who is usually a pretty cool guy and understands what you&rsquo;re saying. Most of the times at least.
+That being said, I&rsquo;m not a fan of the syntax that&rsquo;s <em>behind</em> the nice english-like specs, i.e. lots of regex. Welp!
+That brings me to my choice for UI Testing: KIF.
+KIF (Keep It Functional) is a pretty neat iOS integration framework, it uses the accessibility attributes embedded in every UIKit object to streamline integration testing. This means that you write your tests in plain old Objective-C, which is a big selling point for me.
+Tests won&rsquo;t read in fluid english-like sentences, like they do with Cucumber, but they still remain easy to write and easy to understand, even if your objc-fu is not strong.</p>
+
+<h4>Configuration</h4>
+
+<p>I&rsquo;ll be using <a href="http://www.cocoapods.org/">Cocoapods</a>, of course.
+First of all, you should already have a XCTest target ready. Make sure to add another one for the integration tests. I usually callit &lsquo;UI Tests&rsquo;.
+Here&rsquo;s the Podfile:</p>
+
+<figure class='code'><figcaption><span>Podfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'> <span class="n">target</span> <span class="s2">&quot;Project&quot;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="c1"># your pods</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">target</span> <span class="s2">&quot;Tests&quot;</span><span class="p">,</span> <span class="ss">:exclusive</span> <span class="o">=&gt;</span> <span class="kp">true</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">pod</span> <span class="s1">&#39;Specta&#39;</span>
+</span><span class='line'>      <span class="n">pod</span> <span class="s1">&#39;Expecta&#39;</span>
+</span><span class='line'>      <span class="n">pod</span> <span class="s1">&#39;OHHTTPStubs&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 3.0.2&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">target</span> <span class="s1">&#39;UI Tests&#39;</span><span class="p">,</span> <span class="ss">:exclusive</span> <span class="o">=&gt;</span> <span class="kp">true</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">pod</span> <span class="s1">&#39;KIF&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 2.0&#39;</span><span class="p">,</span> <span class="ss">:inhibit_warnings</span> <span class="o">=&gt;</span> <span class="kp">true</span>
+</span><span class='line'>      <span class="n">pod</span> <span class="s1">&#39;OHHTTPStubs&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 3.0.2&#39;</span>  
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>Feature tests</h5>
+
+<p>After a <code>pod install</code> everything will be ready, so we can <code>open Project.xcworkspace</code>
+As for Specta we should already be set, so we can just head to our Tests target and start adding specs. Note that I added also Expecta, to have a RSpec 2 like syntax.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &lt;Specta.h&gt;</span>
+</span><span class='line'><span class="cp">#define EXP_SHORTHAND</span>
+</span><span class='line'><span class="cp">#import &lt;Expecta.h&gt;    </span>
+</span><span class='line'>
+</span><span class='line'><span class="n">SpecBegin</span><span class="p">(</span><span class="n">Thing</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">describe</span><span class="p">(</span><span class="s">@&quot;Something cool&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>  <span class="n">it</span><span class="p">(</span><span class="s">@&quot;does something amazing&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">to</span><span class="p">.</span><span class="n">equal</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">SpecEnd</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hit <code>⌘ + U</code> and you should be green.</p>
+
+<h5>Integration tests</h5>
+
+<p>Now, Specta needs no further configurations, but KIF does.
+<a href="https://github.com/kif-framework/KIF">KIF documentation</a> suggest to make sure that the Bundle loader and Test Host are correctly configured, but I always found them already set by XCode to the proper values.
+Since now XCode ships with XCTest, I had to switch back to <code>octest</code> in the Wrapper Extension property, under Build Settings.
+Everything should be ok, let&rsquo;s write a test.</p>
+
+<figure class='code'><figcaption><span>UselessTest.h</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &lt;KIF/KIF.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@interface</span> <span class="nc">UselessTest</span> : <span class="nc">KIFTestCase</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>UselessTest.m</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cp">#import &quot;UselessTest.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@implementation</span> <span class="nc">UselessTest</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">doSomething</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">tester</span> <span class="nl">tapScreenAtPoint:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Again <code>⌘ + U</code> and we are good.</p>
+
+<h3>xctool</h3>
+
+<p><a href="https://github.com/facebook/xctool">xctool</a> is a great way to run your tests outside of xcode, and with much better output than xcodebuild. Using it is quite simple, install it via <a href="http://brew.sh/">homebrew</a>:</p>
+
+<pre><code>brew install xctool
+</code></pre>
+
+<p>then run your test with it:</p>
+
+<pre><code>xctool -workspace Project.xcworkspace -scheme Project -sdk iphonesimulator test
+</code></pre>
+
+<p>That&rsquo;s it.
+Until next time.</p>
+
+<p>Cheers</p>
+
+<p>Andrea</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Andrea Mazzini</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-06T14:39:00+01:00" pubdate data-updated="true">Jan 6<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios,</a>, <a class='category' href='/blog/categories/kif/'>kif,</a>, <a class='category' href='/blog/categories/kiwi/'>kiwi,</a>, <a class='category' href='/blog/categories/objc/'>objc</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://andreamazz.github.io/blog/2014/01/06/ios-test-setup/" data-via="theandreamazz" data-counturl="http://andreamazz.github.io/blog/2014/01/06/ios-test-setup/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/01/05/rails-test-setup/" title="Previous Post: Rails Test setup">&laquo; Rails Test setup</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/01/06/ios-test-setup/">iOS Test Setup</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/05/rails-test-setup/">Rails Test setup</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/10/open-for-business/">Open for business</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/andreamazz">@andreamazz</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'andreamazz',
+            count: 5,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("theandreamazz", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/theandreamazz">@theandreamazz</a></p>
+  
+</section>
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/+AndreaMazzini?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Andrea Mazzini -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'uicode';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://andreamazz.github.io/blog/2014/01/06/ios-test-setup/';
+        var disqus_url = 'http://andreamazz.github.io/blog/2014/01/06/ios-test-setup/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+  </div>
+</body>
+</html>

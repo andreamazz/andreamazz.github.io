@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rspec | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/rspec/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-01-06T14:28:18+01:00</updated>
+  <updated>2014-01-06T17:26:58+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -149,47 +149,59 @@
 <span class='line-number'>39</span>
 <span class='line-number'>40</span>
 <span class='line-number'>41</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">ENV</span><span class="o">[&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">RAILS_ENV</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span><span class="o">]</span> <span class="o">||=</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="nb">test</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+</span><span class='line'><span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">.</span><span class="n">.</span><span class="o">/.</span><span class="n">.</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">environment</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="no">FILE</span><span class="o">&lt;</span><span class="sr">/strong&gt;)</span>
+</span><span class='line'><span class="sr">require &amp;lsquo;rspec/</span><span class="n">rails</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;ENV[&quot;RAILS_ENV&quot;] ||= &#39;test&#39;</span>
-</span><span class='line'><span class="sr">require File.expand_path(&quot;../</span><span class="o">.</span><span class="n">.</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">environment</span><span class="s2">&quot;, __FILE__)</span>
-</span><span class='line'><span class="s2">require &#39;rspec/rails&#39;</span>
-</span><span class='line'><span class="s2">#require &#39;rspec/autorun&#39; #removed to support Zeus</span>
-</span><span class='line'><span class="s2">require &#39;capybara/poltergeist&#39;</span>
+</span><span class='line'><span class="sr">&lt;h1&gt;require &amp;lsquo;rspec/</span><span class="n">autorun</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span> <span class="c1">#removed to support Zeus&lt;/h1&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="s2">Dir[Rails.root.join(&quot;</span><span class="n">spec</span><span class="o">/</span><span class="n">support</span><span class="o">/**/*.</span><span class="n">rb</span><span class="s2">&quot;)].each { |f| require f }</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="nb">require</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">capybara</span><span class="o">/</span><span class="n">poltergeist</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="s2">ActiveRecord::Migration.check_pending! if defined?(ActiveRecord::Migration)</span>
+</span><span class='line'><span class="sr">&lt;p&gt;Dir[Rails.root.join(&amp;ldquo;spec/su</span><span class="n">pport</span><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;*/&lt;</span><span class="sr">/em&gt;.rb&amp;rdquo;)].each { |f| require f }&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="s2">RSpec.configure do |config|</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span><span class="o">.</span><span class="n">check_pending!</span> <span class="k">if</span> <span class="n">defined?</span><span class="p">(</span><span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="s2">  config.include FactoryGirl::Syntax::Methods</span>
-</span><span class='line'><span class="s2">  config.filter_run_excluding slow: true</span>
-</span><span class='line'><span class="s2">  config.fixture_path = &quot;</span><span class="c1">#{::Rails.root}/spec/fixtures&quot;</span>
+</span><span class='line'><span class="sr">&lt;p&gt;RSpec.configure do |config|&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="no">Capybara</span><span class="o">.</span><span class="n">javascript_driver</span> <span class="o">=</span> <span class="ss">:poltergeist</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">include</span> <span class="ss">FactoryGirl</span><span class="p">:</span><span class="ss">:Syntax</span><span class="o">::</span><span class="no">Methods</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">filter_run_excluding</span> <span class="ss">slow</span><span class="p">:</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">fixture_path</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="c1">#{::Rails.root}/spec/fixtures&amp;rdquo;&lt;/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="c1"># DatabaseCleaner required to test user authentication protected routes</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">use_transactional_fixtures</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="no">Capybara</span><span class="o">.</span><span class="n">javascript_driver</span> <span class="o">=</span> <span class="ss">:poltergeist</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="ss">:truncation</span>
-</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="sr">&lt;p&gt;  # DatabaseCleaner required to test user authentication protected routes</span>
+</span><span class='line'><span class="sr">  config.use_transactional_fixtures = false&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">start</span>
-</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean</span>
-</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;DatabaseCleaner.strategy = :truncation</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">infer_base_class_for_anonymous_controllers</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="s2">&quot;random&quot;</span>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;DatabaseCleaner.start</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;DatabaseCleaner.clean</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">infer_base_class_for_anonymous_controllers</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">random</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
 </span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
 <p>This sets up DatabaseCleaner and the webdriver for Capybara. It also tells  RSpec to skip tests marked as <code>:slow</code>.</p>
