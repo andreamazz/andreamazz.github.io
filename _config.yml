@@ -3,11 +3,11 @@
 # ----------------------- #
 
 url: http://andreamazz.github.io
-title: UICode
-subtitle: "I'm a software engineer, a movie nerd and a gadget and gaming enthusiast"
+title: Syntax Error
+subtitle: "Random thoughts and snippets"
 author: Andrea Mazzini
 simple_search: http://google.com/search
-description:
+description: "A blog by a software engineer, movie nerd and gadget and gaming enthusiast"
 
 # Default date format is "ordinal" (resulting in "July 22nd 2007")
 # You can customize the format as defined in
@@ -16,10 +16,10 @@ description:
 date_format: "ordinal"
 
 # RSS / Email (optional) subscription links (change if using something like Feedburner)
-subscribe_rss: /atom.xml
+subscribe_rss:
 subscribe_email:
 # RSS feeds can list your email address if you like
-email:
+email: andrea.mazzini@gmail.com
 
 # ----------------------- #
 #    Jekyll & Plugins     #
@@ -73,12 +73,12 @@ twitter_user: theandreamazz
 twitter_tweet_button: true
 
 # Google +1
-google_plus_one: false
+google_plus_one: true
 google_plus_one_size: medium
 
 # Google Plus Profile
 # Hidden: No visible button, just add author information to search results
-googleplus_user:
+googleplus_user: +AndreaMazzini
 googleplus_hidden: false
 
 # Pinboard
@@ -90,11 +90,11 @@ delicious_user:
 delicious_count: 3
 
 # Disqus Comments
-disqus_short_name:
-disqus_show_comment_count: false
+disqus_short_name: uicode
+disqus_show_comment_count: true
 
 # Google Analytics
-google_analytics_tracking_id:
+google_analytics_tracking_id: UA-42282237-7
 
 # Facebook Like
-facebook_like: false
+facebook_like: true

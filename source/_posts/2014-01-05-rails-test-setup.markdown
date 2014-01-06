@@ -1,0 +1,147 @@
+---
+layout: post
+title: "Rails Test setup"
+date: 2014-01-05 19:20
+comments: true
+categories: rails rspec
+---
+Here's how I usually setup my test environment on Rails. I'm using mainly RSpec and Capybara, so nothing new under the sun, but this should provide a mindless copy and paste to get you (mainly me) started.
+<!-- more -->
+First of all, the gems used. This configuration is in part taken from the book "Testing with RSpec" by Aaron Summer:
+
+{% codeblock Gemfile lang:ruby %}
+group :development, :test do
+  gem 'rspec-rails'
+  gem 'factory_girl_rails'
+end
+
+group :test do
+  gem 'shoulda-matchers'
+  gem 'faker'
+  gem 'capybara'
+  gem 'poltergeist'
+  gem 'database_cleaner'  # DatabaseCleaner required to test user authentication protected routes
+  gem 'launchy'
+end
+{% endcodeblock %}
+
+A pretty basic setup, RSpec with shoulda matchers, FactoryGirl + Faker for cool mocks and Capybara with Poltergeist as webdriver.
+
+You might want to install PhantomJS (used by Poltergeist). In Mac OSX you can just use brew:
+
+{% codeblock %}
+brew install phantomjs
+{% endcodeblock %}
+
+With that out of the way the next step is to setup RSpec
+{% codeblock %}
+rails g rspec:install
+{% endcodeblock %}
+
+I like to customize rspec with the dotted (or the ```documentation``` if I'm feeling verbose) and colored notation by adding a .rspec file. 
+{% codeblock .rspec %}
+--color --format progress
+{% endcodeblock %}
+
+Then I'll customize the generators:
+{% codeblock config/application.rb lang:ruby %}
+config.generators do |g|
+  g.test_framework :rspec,
+    fixtures: true,
+    view_specs: false,
+    helper_specs: false,
+    routing_specs: true,
+    controller_specs: true,
+    request_specs: false
+  g.fixture_replacement :factory_girl, dir: 'spec/factories'
+end
+{% endcodeblock %}
+
+As you can see I let the generator create the fixtures (using FactoryGirl) and the controller and routes specs. I create models and request spec manually, and I don't care for view specs.
+
+
+That's about it for Rails, the next step is to do some adjustments to the spec_helper:
+{% codeblock spec/spec_helper_.rb lang:ruby %}
+	ENV["RAILS_ENV"] ||= 'test'
+	require File.expand_path("../../config/environment", __FILE__)
+	require 'rspec/rails'
+	#require 'rspec/autorun' #removed to support Zeus
+	require 'capybara/poltergeist'
+
+	Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
+
+	ActiveRecord::Migration.check_pending! if defined?(ActiveRecord::Migration)
+
+	RSpec.configure do |config|
+
+	  config.include FactoryGirl::Syntax::Methods
+	  config.filter_run_excluding slow: true
+	  config.fixture_path = "#{::Rails.root}/spec/fixtures"
+
+	  Capybara.register_driver :poltergeist do |app|
+	    Capybara::Poltergeist::Driver.new(app, phantomjs_logger: WarningSuppressor)
+	  end
+
+	  Capybara.javascript_driver = :poltergeist
+
+	  # DatabaseCleaner required to test user authentication protected routes
+	  config.use_transactional_fixtures = false
+  
+	  config.before(:suite) do
+	    DatabaseCleaner.strategy = :truncation
+	  end
+
+	  config.before(:each) do
+	    DatabaseCleaner.start
+	  end
+
+	  config.after(:each) do
+	    DatabaseCleaner.clean
+	  end
+
+	  config.infer_base_class_for_anonymous_controllers = false
+	  config.order = "random"
+	end
+{% endcodeblock %}
+
+This sets up DatabaseCleaner and the webdriver for Capybara.
+
+Also, if you are running on OSX 10.9, you might want to add the following in your configure block, to avoid a nagging warning every time you run your test suite:
+{% codeblock spec/spec_helper_.rb lang:ruby %}
+	  # Fix for Mavericks warning
+	  module Capybara::Poltergeist
+	    class Client
+	      private
+	      def redirect_stdout
+	        prev = STDOUT.dup
+	        prev.autoclose = false
+	        $stdout = @write_io
+	        STDOUT.reopen(@write_io)
+
+	        prev = STDERR.dup
+	        prev.autoclose = false
+	        $stderr = @write_io
+	        STDERR.reopen(@write_io)
+	        yield
+	      ensure
+	        STDOUT.reopen(prev)
+	        $stdout = STDOUT
+	        STDERR.reopen(prev)
+	        $stderr = STDERR
+	      end
+	    end
+	  end
+ 
+	  class WarningSuppressor
+	    class << self
+	      def write(message)
+	        if message =~ /QFont::setPixelSize: Pixel size <= 0/ || message =~/NSView is deprecated/ || message =~/CoreText performance note:/ then 0 else puts(message);1;end
+	      end
+	    end
+	  end
+{% endcodeblock %}
+
+And that should be it, therefore
+{% codeblock lang:ruby %}
+expect(post).to be_helpful # I'm quite the commedian
+{% endcodeblock %}
