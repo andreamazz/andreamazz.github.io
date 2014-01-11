@@ -3,7 +3,7 @@ layout: post
 title: "iOS Test Setup"
 date: 2014-01-06 14:39
 comments: true
-categories: ios, kiwi, kif, objc
+categories: ios specta kif objc
 ---
 Yesterday I wrote an article with my Rails test setup, so it's right about the time to do the same for iOS. I'll be covering Specta, Expecta and KIF, plus OHHTTPStubs for... you know... stubs.
 <!-- more -->
