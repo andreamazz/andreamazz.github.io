@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: ios, | Syntax Error]]></title>
+  <title><![CDATA[Category: ios | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-01-06T17:26:58+01:00</updated>
+  <updated>2014-01-11T12:54:21+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -12,6 +12,398 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Network Stubs with OHHTTPStubs]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/01/10/network-stubs-with-ohhttpstubs/"/>
+    <updated>2014-01-10T19:42:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/01/10/network-stubs-with-ohhttpstubs</id>
+    <content type="html"><![CDATA[<p>This week I found myself implementing the Google Places' API in an iOS application, what better occasion to write a post about my favourite iOS stub framework, <a href="https://github.com/AliSoftware/OHHTTPStubs">OHHTTPStubs</a>?</p>
+
+<!-- More -->
+
+
+<h5>Network stubs</h5>
+
+<p>There are a lot of interesting <a href="http://martinfowler.com/articles/mocksArentStubs.html">articles</a> that explain the philosophy behind stubbing, mocking and their differences. I like the concise definition given by <a href="https://twitter.com/greggpollack">Gregg Pollack</a> in <a href="http://www.codeschool.com/courses/rails-testing-for-zombies">Codeschool&rsquo;s Rails Testing for Zombies</a>:
+<blockquote><p>Stubs replace a method with code that returns a specified result, mocks are stubs with an assertion that the method gets called.</p></blockquote>
+That being said, when testing network code, stubs are <em>really</em> useful tools to avoid hitting a network resource each time our tests run. This prevents unwanted traffic (and that&rsquo;s nice when you are dealing with API limits) and speeds up our test suite quite a bit.</p>
+
+<h5>Google Places API</h5>
+
+<p>I won&rsquo;t go further in detail with the Google Places' API, what we need to know is the API&rsquo;s URL and the format of returned JSON object.
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>API&rsquo;s URL </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;a href="https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=">https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=&lt;/a>&lt;your_api_key>&amp;location=&lt;lat,lng>&amp;sensor=true&amp;radius=500</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>debug_info: [ ],
+</span><span class='line'>html_attributions: [ ],
+</span><span class='line'>next_page_token: "ClRHAAAAFwvsXH5hYznZdQOQ61ZCp7gLZmcRVjy3l5OadZe4gdJNrrZb9xocYXTVHnSM3HKjQ41oBM0j7ImXN21Z6guuGMhpRg9fNOlZbN8vHPp1woYSEHZreMp6Y0xJxlpBYpbcslUaFIQravjfeq49dBvwPHGUQzsQwa9p",
+</span><span class='line'>results: [
+</span><span class='line'>    {
+</span><span class='line'>    geometry: {
+</span><span class='line'>        location: {
+</span><span class='line'>            lat: 37.7815533,
+</span><span class='line'>            lng: -122.4156427
+</span><span class='line'>        },
+</span><span class='line'>        viewport: {
+</span><span class='line'>            northeast: {
+</span><span class='line'>                lat: 37.7828015,
+</span><span class='line'>                lng: -122.4125167
+</span><span class='line'>            },
+</span><span class='line'>            southwest: {
+</span><span class='line'>                lat: 37.7741122,
+</span><span class='line'>                lng: -122.4222884
+</span><span class='line'>            }
+</span><span class='line'>        }
+</span><span class='line'>    },
+</span><span class='line'>    icon: "http://maps.gstatic.com/mapfiles/place_api/icons/geocode-71.png",
+</span><span class='line'>    id: "b7fa5ebba26a10513d18e1fd50628f082ffbd1a2",
+</span><span class='line'>    name: "Civic Center",
+</span><span class='line'>    reference: "CrQBoQAAAHvUxRoSt-y3wsF3Cr6JgGO5Y4Q8nWfthCZLFnApqPO9xmy1NnuQnaZ6BqqE9XPbx8rNKBF-IR7R8C8-8O90pkHjcmoUZKtZscZwbuTYa6RLO5ILIl34AGTh8lbB1cdPtt_NXbkQTQg8eiptx_gzYH8BKg8AKWhYFCN5u9xaE9lXENILw2Ngw_TaUoz1DAAwL6s7uLP3nTQIsO5tOVdsGh3dv2F4ZPck2dHBqD3gPHLSEhArD0KzT3KhPbFWq9UII33pGhSBLiwjfI7y3uOwGS8pkCskS6RK8Q",
+</span><span class='line'>    types: [
+</span><span class='line'>        "neighborhood",
+</span><span class='line'>        "political"
+</span><span class='line'>    ],
+</span><span class='line'>    vicinity: "San Francisco"
+</span><span class='line'>    }
+</span><span class='line'>]
+</span><span class='line'>status: "OK"
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>}</span></code></pre></td></tr></table></div></figure></notextile></div>
+Great, we have a lot of info, but I really need just <code>name</code> and <code>id</code> in this project.</p>
+
+<h5>Writing the test</h5>
+
+<p>Ok, we figured out how to ask Google for directions and we have our JSON response, next up is our test.</p>
+
+<p>In the last blog post I wrote about my iOS test configuration with Specta. In this project though I&rsquo;ll be using <a href="https://github.com/allending/Kiwi">Kiwi</a>, nothing mayor really changes, just the syntax.</p>
+
+<p>Here&rsquo;s the spec:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">describe</span><span class="p">(</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="nl">fetchSuggestionsForLocation:onSuccess:</span><span class="n">onFailure</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">context</span><span class="p">(</span><span class="s">@&quot;with valid data&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">it</span><span class="p">(</span><span class="s">@&quot;returns an array&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">__block</span> <span class="n">NSArray</span><span class="o">*</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">AMPlacesHelper</span> <span class="n">sharedHelper</span><span class="p">]</span> <span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">){</span><span class="mf">37.7749295</span><span class="p">,</span><span class="o">-</span><span class="mf">122.4194155</span><span class="p">}</span> <span class="nl">onSuccess:</span><span class="o">^</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="nl">onFailure:</span><span class="o">^</span><span class="p">(</span><span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{}];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="nl">beKindOfClass:</span><span class="p">[</span><span class="n">NSArray</span> <span class="n">class</span><span class="p">]];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">theValue</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">count</span><span class="p">))</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="nl">beGreaterThan:</span><span class="n">theValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span><span class="p">(</span><span class="s">@&quot;returns a JSON array of places with a name and id&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">__block</span> <span class="n">NSArray</span><span class="o">*</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">AMPlacesHelper</span> <span class="n">sharedHelper</span><span class="p">]</span> <span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">){</span><span class="mf">37.7749295</span><span class="p">,</span><span class="o">-</span><span class="mf">122.4194155</span><span class="p">}</span> <span class="nl">onSuccess:</span><span class="o">^</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="nl">onFailure:</span><span class="o">^</span><span class="p">(</span><span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{}];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">@&quot;name&quot;</span><span class="p">])</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="n">beNonNil</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">@&quot;id&quot;</span><span class="p">])</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="n">beNonNil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">context</span><span class="p">(</span><span class="s">@&quot;with invalid data&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">it</span><span class="p">(</span><span class="s">@&quot;returns an error in the failure block&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">__block</span> <span class="n">NSError</span><span class="o">*</span> <span class="n">resultError</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">AMPlacesHelper</span> <span class="n">sharedHelper</span><span class="p">]</span> <span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">){</span><span class="mf">37.7749295</span><span class="p">,</span><span class="o">-</span><span class="mf">122.4194155</span><span class="p">}</span> <span class="nl">onSuccess:</span><span class="o">^</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span> <span class="p">{}</span> <span class="nl">onFailure:</span><span class="o">^</span><span class="p">(</span><span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">resultError</span> <span class="o">=</span> <span class="n">error</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">resultError</span><span class="p">)</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="n">beNonNil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Pretty basic stuff, the first test checks that the returned object is an <code>NSArray</code>, and that its content&rsquo;s lenght is greater than 0. The second test checks for the content itself, making sure that <code>id</code> and <code>name</code> are present. The last spec just checks against invalid data, making sure that an error is raised. <code>expectFutureValue</code> waits 1 seconds (by default) before raising the expectation. This is key when dealing with asyncronous calls.</p>
+
+<p>You may point out that it&rsquo;s always a good practice to limit expectations to one per spec, but since these are pretty basic, I figured I could get away with squeezing two of them in the same spec.</p>
+
+<p>Running the test with my trusty xctool script, I see 3 red specs, yay!</p>
+
+<h5>Stubbing the network</h5>
+
+<p>Now we could implement our code and run the test again, hoping for green, but once we manage to make the network call, we&rsquo;ll be hitting the Google Places' API once for every test run. That&rsquo;s bad, so here enters <a href="https://github.com/AliSoftware/OHHTTPStubs">OHHTTPStubs</a>.</p>
+
+<p>OHHTTPStubs is pretty cool, it lets you register a stub that will listen for any network request and respond with a preset response body and response code. This means that we can easily emulate the network API&rsquo;s behaviour and use it to our likings.
+The basic structure of a stub is this one:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="nl">stubRequestsPassingTest:</span><span class="o">^</span><span class="kt">BOOL</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// Here you can decide whether to stub the request or not, based for example on the request URL</span>
+</span><span class='line'><span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="nl">withStubResponse:</span><span class="o">^</span><span class="n">OHHTTPStubsResponse</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// Here you return the fake data from your stubbed network call</span>
+</span><span class='line'><span class="k">return</span> <span class="p">[</span><span class="n">OHHTTPStubsResponse</span> <span class="nl">responseWithJSONObject:</span><span class="err">@</span><span class="p">[</span> <span class="s">@&quot;hello&quot;</span> <span class="p">]</span> <span class="nl">statusCode:</span><span class="mi">200</span> <span class="nl">headers:</span><span class="err">@</span><span class="p">{</span><span class="s">@&quot;Content-Type&quot;</span><span class="o">:</span> <span class="s">@&quot;application/json&quot;</span><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Pretty nifty. Once we described our test we can then tear down the stubs in an <code>afterAll</code> block:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">afterAll</span><span class="p">(</span><span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="n">removeAllStubs</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h5>Our fixture</h5>
+
+<p>Since I want to stub the Google Places' API I need to provide a sort of fixture throught OHHTTPStubs. Let&rsquo;s <code>curl</code> the result, and save it to a JSON file that will be served by the stub.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl &lt;a href="https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=">https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=&lt;/a>&lt;your_api_key>&amp;location=&lt;lat,lng>&amp;sensor=true&amp;radius=500 > google_places.json</span></code></pre></td></tr></table></div></figure></notextile></div>
+Let&rsquo;s put this file in the test bundle of our iOS application and write the stub for the context <code>with valid data</code>:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">beforeEach</span><span class="p">(</span><span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="nl">stubRequestsPassingTest:</span><span class="o">^</span><span class="kt">BOOL</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="nl">withStubResponse:</span><span class="o">^</span><span class="n">OHHTTPStubsResponse</span><span class="o">*</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">NSBundle</span> <span class="o">*</span><span class="n">bundle</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSBundle</span> <span class="nl">bundleForClass:</span><span class="p">[</span><span class="n">self</span> <span class="n">class</span><span class="p">]];</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="n">OHHTTPStubsResponse</span> <span class="nl">responseWithFileAtPath:</span><span class="p">[</span><span class="n">bundle</span> <span class="nl">pathForResource:</span><span class="s">@&quot;google_places&quot;</span> <span class="nl">ofType:</span><span class="s">@&quot;json&quot;</span><span class="p">]</span>
+</span><span class='line'>                                            <span class="nl">statusCode:</span><span class="mi">200</span>
+</span><span class='line'>                                               <span class="nl">headers:</span><span class="err">@</span><span class="p">{</span><span class="s">@&quot;Content-Type&quot;</span><span class="o">:</span> <span class="s">@&quot;application/json&quot;</span><span class="p">}];</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And for the context <code>with invalid data</code>:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">beforeEach</span><span class="p">(</span><span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="nl">stubRequestsPassingTest:</span><span class="o">^</span><span class="kt">BOOL</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="nl">withStubResponse:</span><span class="o">^</span><span class="n">OHHTTPStubsResponse</span><span class="o">*</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="n">OHHTTPStubsResponse</span> <span class="nl">responseWithData:</span><span class="nb">nil</span> <span class="nl">statusCode:</span><span class="mi">500</span> <span class="nl">headers:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We should be set, let&rsquo;s make sure that our test fail in a meaningful way:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;p>xctool -workspace Project.xcworkspace -scheme &lsquo;Project&rsquo; -sdk iphonesimulator test
+</span><span class='line'>&hellip;
+</span><span class='line'>&lsquo;AMPlacesHelper, fetchSuggestionsForLocation：onSuccess：onFailure, with valid data, returns an array&rsquo; [FAILED], expected subject to be kind of NSArray, got (null)
+</span><span class='line'>&lsquo;AMPlacesHelper, fetchSuggestionsForLocation：onSuccess：onFailure, with valid data, returns a JSON array of places with a name and id&rsquo; [FAILED], expected subject not to be nil
+</span><span class='line'>&lsquo;AMPlacesHelper, fetchSuggestionsForLocation：onSuccess：onFailure, with invalid data, returns an error in the failure block&rsquo; [FAILED], expected subject not to be nil</span></code></pre></td></tr></table></div></figure></notextile></div>
+Nice! We can now implement the code that will let the test pass, but won&rsquo;t hit the network.</p></blockquote>
+
+<h5>From red to green</h5>
+
+<p>Let&rsquo;s implement the code that will pass our test. As always, I used <a href="https://github.com/AFNetworking/AFNetworking">AFNetworking</a> to do a quick GET request to the aforementioned API.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">)</span><span class="n">coordinates</span> <span class="nl">onSuccess:</span><span class="p">(</span><span class="kt">void</span><span class="p">(</span><span class="o">^</span><span class="p">)(</span><span class="n">NSArray</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">data</span><span class="p">))</span><span class="n">success</span> <span class="nl">onFailure:</span><span class="p">(</span><span class="kt">void</span><span class="p">(</span><span class="o">^</span><span class="p">)(</span><span class="n">NSError</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">error</span><span class="p">))</span><span class="n">failure</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">setNetworkActivityIndicatorVisible:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'><span class="n">AFHTTPRequestOperationManager</span> <span class="o">*</span><span class="n">manager</span> <span class="o">=</span> <span class="p">[</span><span class="n">AFHTTPRequestOperationManager</span> <span class="n">manager</span><span class="p">];</span>
+</span><span class='line'><span class="n">NSDictionary</span><span class="o">*</span> <span class="n">params</span> <span class="o">=</span> <span class="err">@</span><span class="p">{</span><span class="s">@&quot;key&quot;</span><span class="o">:</span> <span class="n">kGooglePlacesKey</span><span class="p">,</span>
+</span><span class='line'>                         <span class="s">@&quot;location&quot;</span><span class="o">:</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;%f,%f&quot;</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">.</span><span class="n">latitude</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">.</span><span class="n">longitude</span><span class="p">],</span>
+</span><span class='line'>                         <span class="s">@&quot;sensor&quot;</span><span class="o">:</span> <span class="s">@&quot;true&quot;</span><span class="p">,</span>
+</span><span class='line'>                         <span class="s">@&quot;radius&quot;</span><span class="o">:</span> <span class="s">@&quot;500&quot;</span><span class="p">};</span>
+</span><span class='line'><span class="p">[</span><span class="n">manager</span> <span class="nl">GET:</span><span class="n">kGooglePlacesURL</span> <span class="nl">parameters:</span><span class="n">params</span> <span class="nl">success:</span><span class="o">^</span><span class="p">(</span><span class="n">AFHTTPRequestOperation</span> <span class="o">*</span><span class="n">operation</span><span class="p">,</span> <span class="kt">id</span> <span class="n">responseObject</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">setNetworkActivityIndicatorVisible:</span><span class="n">NO</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">success</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">success</span><span class="p">(</span><span class="n">responseObject</span><span class="p">[</span><span class="s">@&quot;results&quot;</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span> <span class="nl">failure:</span><span class="o">^</span><span class="p">(</span><span class="n">AFHTTPRequestOperation</span> <span class="o">*</span><span class="n">operation</span><span class="p">,</span> <span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">setNetworkActivityIndicatorVisible:</span><span class="n">NO</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">failure</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">failure</span><span class="p">(</span><span class="n">error</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">failure</span><span class="p">([[</span><span class="n">NSError</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithDomain:</span><span class="s">@&quot;googleapi.com&quot;</span> <span class="nl">code:</span><span class="mi">500</span> <span class="nl">userInfo:</span><span class="err">@</span><span class="p">{</span><span class="s">@&quot;message&quot;</span><span class="o">:</span> <span class="s">@&quot;unable to retrieve places&quot;</span><span class="p">}]);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We run our suite again:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;strong> TEST PASSED: 3 passed, 0 failed, 0 errored, 3 total &lt;/strong></span></code></pre></td></tr></table></div></figure></notextile></div>
+We&rsquo;re green. We can turn off Wifi and unplug the ethernet cable, the test will pass anyway.</p>
+
+<p>If we want to test the code with the live feed, we can easily switch the return value for <code>stubRequestsPassingTest</code> in our stubs to <code>NO</code>.</p>
+
+<h5>Debugging stubs</h5>
+
+<p>When using OHHTTPStubs there&rsquo;s one caveat&hellip;</p>
+
+<p>While writing the stub, I did manage to sneak a typo in my stub code, so I was trying to load <code>google.places.json</code> instead of <code>google_places.json</code>. Usually you&rsquo;d find this error pretty easilly, but this time I only noticed that every stubbed spec that was previously green, now was failing with this generic error:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Test did not run: the test bundle stopped running or crashed in AMPlacesHelper_FetchSuggestionsForLocationonSuccessonFailure_WithValidData_ReturnsAnArray</span></code></pre></td></tr></table></div></figure></notextile></div>
+This can be annoying to debug if you have complex stub and I didn&rsquo;t find any quick solution, beside being careful when writing the stub implementation. I guess that a good rule of thumb here is:
+<blockquote><p>keep your stubs as simple as possible</p></blockquote>
+This should really apply to every good stub and mock.</p>
+
+<p>Until next time.<br/>
+Andrea</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[iOS Test Setup]]></title>

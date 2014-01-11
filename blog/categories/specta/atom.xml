@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: specta | Syntax Error]]></title>
+  <link href="http://andreamazz.github.io/blog/categories/specta/atom.xml" rel="self"/>
+  <link href="http://andreamazz.github.io/"/>
+  <updated>2014-01-11T12:54:21+01:00</updated>
+  <id>http://andreamazz.github.io/</id>
+  <author>
+    <name><![CDATA[Andrea Mazzini]]></name>
+    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[iOS Test Setup]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/01/06/ios-test-setup/"/>
+    <updated>2014-01-06T14:39:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/01/06/ios-test-setup</id>
+    <content type="html"><![CDATA[<p>Yesterday I wrote an article with my Rails test setup, so it&rsquo;s right about the time to do the same for iOS. I&rsquo;ll be covering Specta, Expecta and KIF, plus OHHTTPStubs for&hellip; you know&hellip; stubs.</p>
+
+<!-- more -->
+
+
+<p>First thing first, as you can see from the previous post, I&rsquo;m not really into Cucumber. I have more of a <em>dev-first</em> approach for specs. That&rsquo;s the benefit of working on your own projects: you only have to explain things to yourself, who is usually a pretty cool guy and understands what you&rsquo;re saying. Most of the times at least.
+That being said, I&rsquo;m not a fan of the syntax that&rsquo;s <em>behind</em> the nice english-like specs, i.e. lots of regex. Welp!
+That brings me to my choice for UI Testing: KIF.
+KIF (Keep It Functional) is a pretty neat iOS integration framework, it uses the accessibility attributes embedded in every UIKit object to streamline integration testing. This means that you write your tests in plain old Objective-C, which is a big selling point for me.
+Tests won&rsquo;t read in fluid english-like sentences, like they do with Cucumber, but they still remain easy to write and easy to understand, even if your objc-fu is not strong.</p>
+
+<h4>Configuration</h4>
+
+<p>I&rsquo;ll be using <a href="http://www.cocoapods.org/">Cocoapods</a>, of course.
+First of all, you should already have a XCTest target ready. Make sure to add another one for the integration tests. I usually callit &lsquo;UI Tests&rsquo;.
+Here&rsquo;s the Podfile:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Podfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;target &quot;Project&quot; do</span>
+</span><span class='line'><span class="sr">    # your pods</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">target &quot;Tests&quot;, :exclusive =&amp;gt; true do</span>
+</span><span class='line'><span class="sr">    pod &#39;Specta&#39;</span>
+</span><span class='line'><span class="sr">    pod &#39;Expecta&#39;</span>
+</span><span class='line'><span class="sr">    pod &#39;OHHTTPStubs&#39;, &#39;~&amp;gt; 3.0.2&#39;</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">target &#39;UI Tests&#39;, :exclusive =&amp;gt; true do</span>
+</span><span class='line'><span class="sr">    pod &#39;KIF&#39;, &#39;~&amp;gt; 2.0&#39;, :inhibit_warnings =&amp;gt; true</span>
+</span><span class='line'><span class="sr">    pod &#39;OHHTTPStubs&#39;, &#39;~&amp;gt; 3.0.2&#39;   </span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h5>Feature tests</h5>
+
+<p>After a <code>pod install</code> everything will be ready, so we can <code>open Project.xcworkspace</code>
+As for Specta we should already be set, so we can just head to our Tests target and start adding specs. Note that I added also Expecta, to have a RSpec 2 like syntax.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Specta</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">EXP_SHORTHAND</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Expecta</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">SpecBegin</span><span class="p">(</span><span class="n">Thing</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">describe</span><span class="p">(</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Something</span> <span class="n">cool</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">it</span><span class="p">(</span><span class="s">@&quot;does something amazing&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">expect</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">to</span><span class="p">.</span><span class="n">equal</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">SpecEnd</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Hit <code>⌘ + U</code> and you should be green.</p>
+
+<h5>Integration tests</h5>
+
+<p>Now, Specta needs no further configurations, but KIF does.
+<a href="https://github.com/kif-framework/KIF">KIF documentation</a> suggest to make sure that the Bundle loader and Test Host are correctly configured, but I always found them already set by XCode to the proper values.
+Since now XCode ships with XCTest, I had to switch back to <code>octest</code> in the Wrapper Extension property, under Build Settings.
+Everything should be ok, let&rsquo;s write a test.
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>UselessTest.h</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">KIF</span><span class="o">/</span><span class="n">KIF</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@interface</span> <span class="nc">UselessTest</span> : <span class="nc">KIFTestCase</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>UselessTest.m</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">UselessTest</span><span class="p">.</span><span class="n">h</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@implementation</span> <span class="nc">UselessTest</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">doSomething</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">tester</span> <span class="nl">tapScreenAtPoint:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">}];</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@end</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Again <code>⌘ + U</code> and we are good.</p>
+
+<h3>xctool</h3>
+
+<p><a href="https://github.com/facebook/xctool">xctool</a> is a great way to run your tests outside of xcode, and with much better output than xcodebuild. Using it is quite simple, install it via <a href="http://brew.sh/">homebrew</a>:</p>
+
+<pre><code>brew install xctool
+</code></pre>
+
+<p>then run your test with it:</p>
+
+<pre><code>xctool -workspace Project.xcworkspace -scheme Project -sdk iphonesimulator test
+</code></pre>
+
+<p>That&rsquo;s it.
+Until next time.</p>
+
+<p>Cheers</p>
+
+<p>Andrea</p>
+]]></content>
+  </entry>
+  
+</feed>
