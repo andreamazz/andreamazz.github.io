@@ -4,7 +4,7 @@
   <title><![CDATA[Category: objc | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/objc/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-01-11T12:54:21+01:00</updated>
+  <updated>2014-01-25T15:55:55+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -12,6 +12,195 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Configuring Alljoyn on iOS]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/01/25/configuring-alljoyn-on-ios/"/>
+    <updated>2014-01-25T11:29:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/01/25/configuring-alljoyn-on-ios</id>
+    <content type="html"><![CDATA[<p>Have you ever played <a href="http://www.sleepingbeastgames.com/spaceteam/">Spaceteam</a> on <a href="https://play.google.com/store/apps/details?id=com.sleepingbeastgames.spaceteam">Android</a> or <a href="https://itunes.apple.com/it/app/spaceteam/id570510529?mt=8">iOS</a>? It&rsquo;s a local (cross-platform) multiplayer only game, based on a really cool concept. The players are&hellip; <em>you guessed it&hellip;</em> a space team, and they need to cooperate to keep the spaceship they are traveling on intact through space. This means that you&rsquo;ll be <a href="http://penny-arcade.com/comic/2012/12/31">shouting at your friends</a> commands, and activating various weirdly named knobs and switches.<br/>
+While I was researching the tech behind it, I stumbled upon <a href="https://www.alljoyn.org/">Alljoyn</a>, by Qualcomm.</p>
+
+<!-- More -->
+
+
+<p>Spaceteam uses <a href="https://github.com/tolo/HHServices">HHServices</a> and <a href="https://github.com/roustem/AsyncSocket">AsyncSocket</a>, so the networking protocol was built almost from the ground up by <a href="https://twitter.com/hengineer">its creator</a>. Alljoyn on the other hand promises an opensource <em>&ldquo;universal (cross-platform) software framework that enables interoperability among connected products and software applications across manufacturers to create dynamic proximal networks.&rdquo;</em> And I&rsquo;m all for that.<br/>
+The cool thing about it is its ability to seamlessly operate over wifi or over bluetooth (losing the cross-platform ability).
+If you login on the Alljoyn site you&rsquo;ll come across the free, opensource, SDK and a bunch of samples. I downloaded the iOS SDK, and started working on my sample.<br/>
+What I found out is that the walkthroughs and guides are either not up to date or just wrong. So I figured I could write down what I did to make everything work.<br/>
+In this day and age, where cocoapods eases our mind when we need to integrate a third party library, it was a harsh throwback in the world of missing headers and wrong architecture builds.</p>
+
+<h4>Compiling openssl</h4>
+
+<p>If you take a look at Alljoyn&rsquo;s SDK readme you&rsquo;ll notice that the first thing you need to do is compile Openssl for iOS. That&rsquo;s quite easy, and fairly well documented, just head to <a href="https://github.com/sqlcipher/openssl-xcode">Github and clone the openssl-xcode project</a>.<br/>
+As stated in the readme you need to download the <a href="http://www.openssl.org/source/">openssl sources</a> and place them in your openssl-xcode project.<br/>
+That&rsquo;s how the folder structure should look:</p>
+
+<p><img class="center" src="/images/posts/2014-01-25/openssl.png" width="760" height="550" title="&lsquo;openssl&rsquo;" ></p>
+
+<p>To compile it just open the .xcodeproj file and use XCode&rsquo;s Product &ndash;> Build For &ndash;> Release, or stay in your terminal window and compile it with xctool or xcodebuild, either:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>xcodebuild -project openssl.xcodeproj -scheme crypto</span></code></pre></td></tr></table></div></figure></notextile></div>
+or:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>xctool -project openssl.xcodeproj -scheme crypto</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>You&rsquo;ll find the built library in your derived data:</p>
+
+<p><img class="center" src="/images/posts/2014-01-25/derived-data.png" title="&lsquo;built openssl&rsquo;" ></p>
+
+<p>Just grab <code>Debug-iphoneos</code> and <code>Debug-iphonesimulator</code>, and place them under a <code>build</code> folder, inside your openssl sources. It should look something like this:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>☺   ~/openssl/build ll
+</span><span class='line'>drwxr-xr-x  5 Andrea  staff  170 21 Gen 23:26 Debug
+</span><span class='line'>drwxr-xr-x  5 Andrea  staff  170 21 Gen 23:28 Debug-iphoneos
+</span><span class='line'>drwxr-xr-x  5 Andrea  staff  170 21 Gen 23:28 Debug-iphonesimulator</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Cool, now download and unzip the Alljoyn&rsquo;s SDK.</p>
+
+<h4>New Alljoyn project</h4>
+
+<p>With that out of the way it&rsquo;s time to start working on our project. Fire up Xcode and create a new project.</p>
+
+<h5>Object Model</h5>
+
+<p>We&rsquo;ll start by creating the object that will travel the bus. Alljoyn uses its own XML format to define the object structure. I&rsquo;m not a fan of this format, but that&rsquo;s what we have to work with:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Object model </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="ni">&amp;lt;</span>?xml version=<span class="ni">&amp;ldquo;</span>1.0<span class="ni">&amp;rdquo;</span>?&gt;
+</span><span class='line'><span class="nt">&lt;xml&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;pre&gt;&lt;code&gt;</span><span class="ni">&amp;lt;</span>node name=&quot;org/alljoyn/Bus/sample&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;SampleObject&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>interface name=&quot;org.alljoyn.bus.sample&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>        <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;SampleObjectDelegate&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>        <span class="ni">&amp;lt;</span>method name=&quot;Concatentate&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>arg name=&quot;str1&quot; type=&quot;s&quot; direction=&quot;in&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>                <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;concatenateString:&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>/arg<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>arg name=&quot;str2&quot; type=&quot;s&quot; direction=&quot;in&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>                <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;withString:&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>/arg<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>arg name=&quot;outStr&quot; type=&quot;s&quot; direction=&quot;out&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>        <span class="ni">&amp;lt;</span>/method<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>/interface<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="ni">&amp;lt;</span>/node<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="nt">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;p&gt;&lt;/xml&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This is the basic object that you&rsquo;ll find in the official guide, it defines a simple method that returns two input strings concatenated:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&ndash; (NSString&lt;em>)concatenateString:(NSString&lt;/em>)str1 withString:(NSString*)str2;</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Cool, now we should run the code generator bundled in the Alljoyn&rsquo;s SDK to generate the Objective-c code.
+The generator needs to be compiled, so we&rsquo;ll do that in a couple of clicks.</p>
+
+<h6>Compiling the generator</h6>
+
+<p>Building the generator is pretty straightforward, just head to <code>&lt;AllJoyn SDK Root&gt;/alljoyn_objc/AllJoynCodeGenerator</code> and build with XCode the AllJoynCodeGenerator.xcproj. This will create a /bin folder with the generator excecutable file.</p>
+
+<p>Now the good Alljoyn folks suggest to setup a new target that will allow us to generate with XCode the code. Since I like to keep my targets tidy, and since we have a perfectly fine console, I just skip this step and go the old fashioned way. Just copy the bin/AllJoynCodeGenerator wherever you like, as well with our trusty XML object, and run:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./AllJoynCodeGenerator sample_object.xml</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This will generate:</p>
+
+<pre><code>AJNSampleObject.h
+AJNSampleObject.mm
+SampleObject.h
+SampleObject.m
+</code></pre>
+
+<p>Copy these file to your project and add them to your target.</p>
+
+<h5>Build settings</h5>
+
+<p>Now the fun part. We&rsquo;ll need to configure the build settings of our project. What I really like to do is move the AllJoyn&rsquo;s SDK bins and openssl build in the project&rsquo;s root. Two reasons for that:</p>
+
+<ul>
+<li><p>I don&rsquo;t have to configure environment variables and link the relative paths</p></li>
+<li><p>The project is self contained, so everyone can just clone the project and compile it without firther hassles</p></li>
+</ul>
+
+
+<p>So, here&rsquo;s my folder structure:</p>
+
+<pre><code>☺   ~/code/git/alljoynsample ll
+drwxr-xr-x  16 Andrea  staff  544 25 Gen 15:14 AlljoynSample
+drwxr-xr-x   5 Andrea  staff  170 25 Gen 15:14 AlljoynSample.xcodeproj
+drwxr-xr-x   5 Andrea  staff  170 25 Gen 15:14 AlljoynSampleTests
+drwxr-xr-x   5 Andrea  staff  170 25 Gen 15:14 alljoyn-sdk
+drwxr-xr-x   4 Andrea  staff  136 25 Gen 15:14 openssl
+</code></pre>
+
+<p>Remmeber to remove the unused samples and openssl sources.</p>
+
+<p>Next step, head to your project&rsquo;s build settings tab, and set <code>Build Active Architecture Only</code> to YES.</p>
+
+<p>Below that field, look for <code>Other Linker Flags</code> and set it to <code>-lalljoyn -lajdaemon -lBundledDaemon.o -lssl -lcrypto</code>.</p>
+
+<p>That&rsquo;s where I needed to stop following the official guide, since the path described are wrong.
+Head to the <code>Header Search Paths</code> field and enter these:</p>
+
+<pre><code>$(inherited)
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+"$(SRCROOT)/alljoyn-sdk/alljoyn_core/build/darwin/arm/$(PLATFORM_NAME)/$(CONFIGURATION)/dist/cpp/inc"
+"$(SRCROOT)/alljoyn-sdk/alljoyn_core/build/darwin/arm/$(PLATFORM_NAME)/$(CONFIGURATION)/dist/cpp/inc/alljoyn"
+</code></pre>
+
+<p>Then in <code>Library Search Paths</code>:</p>
+
+<pre><code>$(inherited)
+"$(SRCROOT)/openssl/build/$(CONFIGURATION)-$(PLATFORM_NAME)"
+"$(SRCROOT)/alljoyn-sdk/alljoyn_core/build/darwin/$(CURRENT_ARCH)/$(PLATFORM_NAME)/$(CONFIGURATION)/dist/cpp/lib"
+</code></pre>
+
+<p>The $(CURRENT_ARCH) var was key to make the project compile on armv7s devices. That took a while to figure out.</p>
+
+<p>We can now get back to the official guide, setting <code>Enable C++ Exceptions</code> and <code>Enable C++ Runtime Types</code> to NO.</p>
+
+<p>Add <code>-DQCC_OS_GROUP_POSIX -DQCC_OS_DARWIN</code> to <em>Other C Flags</em> Debug and <code>-DNS_BLOCK_ASSERTIONS=1 -DQCC_OS_GROUP_POSIX -DQCC_OS_DARWIN</code> to <em>Other C Flags</em> Release.</p>
+
+<h6>Frameworks</h6>
+
+<p>Almost done. We need to take care of the frameworks. Just copy the <code>AllJoynFramework</code> folder from the Alljoyn&rsquo;s SDK in your folder and your project, and make sure to remove the <code>AJNPasswordManager</code> class or you won&rsquo;t be able to compile.
+Finish up by linking the static frameworks <code>SystemConfiguration</code> and <code>libstdc++.dylib</code> and we are done.</p>
+
+<p>Hit the trusty <code>⌘B</code> and you should see a succesful build.</p>
+
+<p>Well, that wasn&rsquo;t fun at all, and it sure made me appreciate Cocoapods even more.
+Hope this helps anyway.</p>
+
+<p>Until next time.<br/>
+Andrea</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Network Stubs with OHHTTPStubs]]></title>
