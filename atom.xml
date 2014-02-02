@@ -4,7 +4,7 @@
   <title><![CDATA[Syntax Error]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-02-02T15:31:05+01:00</updated>
+  <updated>2014-02-02T15:44:07+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -23,7 +23,7 @@
 <!-- More -->
 
 
-<p><code>AMScrollingNavbar</code> is a simple iOS library that lets you implement a <code>UINavigationBar</code> that scrolls out of the way when the user is scrolling the content of the app. You can observe this behaviour in Google Chrome, Instagram or Facebook apps. I wanted to integrate something like that on one of the app I&rsquo;m working on, over at <a href="http://www.fancypixel.it">Fancy Pixel</a>, but couldn&rsquo;t find anything that did the job as I intended. What better motivation to do some OSS?</p>
+<p><code>AMScrollingNavbar</code> is a simple iOS library that lets you implement a <code>UINavigationBar</code> that scrolls out of the way when the user is scrolling the content of the app. You can observe this behavior in Google Chrome, Instagram or Facebook apps. I wanted to integrate something like that on one of the app I&rsquo;m working on, over at <a href="http://www.fancypixel.it">Fancy Pixel</a>, but couldn&rsquo;t find anything that did the job as I intended. What better motivation to do some OSS?</p>
 
 <h3>Writing the code</h3>
 
@@ -203,7 +203,7 @@ The last item on the todo list is the refactoring of the sample project. And we&
 
 <h3>Writing the documentation</h3>
 
-<p>An open source project is as good as its documentation is. It helps the first implementation by other devs, and most of all helps them decide wether to use your library or not. In some way it&rsquo;s marketing, withouth the <em>market</em> part.<br/>
+<p>An open source project is as good as its documentation is. It helps the first implementation by other devs, and most of all helps them decide wether to use your library or not. In some way it&rsquo;s marketing, without the <em>market</em> part.<br/>
 I like to spend some time to add comments following the <a href="http://nshipster.com/documentation/">Appledoc notation</a>. This will provide a comprehensive quick guide in XCode, and also will generate an Apple-like documentation in the <a href="http://cocoadocs.org/docsets/AMScrollingNavbar/0.5.4/Classes/AMScrollingCollectionViewController.html">Cocoapods pages</a>.
 As you can see the syntax is easy to write and to understand:</p>
 
@@ -306,15 +306,15 @@ Here&rsquo;s what my podspec looks like:</p>
 
 <h4>Cocoacontrols</h4>
 
-<p><a href="https://www.cocoacontrols.com/">Cocoacontrols</a> is my favourite place to window shop for new libraries. As soon as my pod is ready and I feel that the README is comprehensive enough, I submit my control to cocoacontrols&#8217; review queue. It&rsquo;s a great way to get some visibility from fellow developers, and a great way to discover new controls. A big thanks to <a href="https://www.cocoacontrols.com/about">Aaron, Marine and Bob</a>.</p>
+<p><a href="https://www.cocoacontrols.com/">Cocoacontrols</a> is my favorite place to window shop for new libraries. As soon as my pod is ready and I feel that the README is comprehensive enough, I submit my control to cocoacontrols&#8217; review queue. It&rsquo;s a great way to get some visibility from fellow developers, and a great way to discover new controls. A big thanks to <a href="https://www.cocoacontrols.com/about">Aaron, Marine and Bob</a>.</p>
 
 <h3>Maintaining the code</h3>
 
 <p>Once the code is in the wild, it&rsquo;s time to maintain the code. This means answering questions about its use, fixing possible issues and merging the always welcome pull requests. It can become a job of its own at times, but it&rsquo;s a high reward task, since it gives you the chance to experiment more and improve your code quite a lot.<br/>
-The only tool that I use is the <code>Issue</code> section of github. I tried once to get into the habit of tracking the issues with <a href="https://waffle.io/">Waffle</a>, but in the end I never really used it efficently.<br/>
+The only tool that I use is the <code>Issue</code> section of github. I tried once to get into the habit of tracking the issues with <a href="https://waffle.io/">Waffle</a>, but in the end I never really used it efficiently.<br/>
 AMScrollingNavbar was well received, and has now (what is for me) a fair amount of stargazers on Github. I&rsquo;d like to thank all the contributors that helped to improve the library, introducing new features and fixing my missteps.</p>
 
-<p>That about wraps up this autoreferential post.<br/>
+<p>That about wraps up this auto referential post.<br/>
 Until next time.<br/>
 Andrea</p>
 ]]></content>
