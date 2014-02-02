@@ -71,6 +71,7 @@ github_skip_forks: true
 # Twitter
 twitter_user: theandreamazz
 twitter_tweet_button: true
+twitter_follow_button: true
 
 # Google +1
 google_plus_one: true
