@@ -4,7 +4,7 @@
   <title><![CDATA[Syntax Error]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-01-25T15:55:55+01:00</updated>
+  <updated>2014-02-02T15:31:05+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -12,6 +12,313 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[AMScrollingNavbar: creating a cocoapod]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod/"/>
+    <updated>2014-02-01T12:07:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod</id>
+    <content type="html"><![CDATA[<p>This week <a href="https://twitter.com/mattt">Matt Thompson</a> published an interesting article on NSHipster, about <a href="http://nshipster.com/stewardship/">stewardship</a>, which is basically <em>the duty and ethic of public service</em>. Since I&rsquo;ve been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I&rsquo;m writing a new library for iOS. I&rsquo;ll be describing my work on <a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a>.</p>
+
+<!-- More -->
+
+
+<p><code>AMScrollingNavbar</code> is a simple iOS library that lets you implement a <code>UINavigationBar</code> that scrolls out of the way when the user is scrolling the content of the app. You can observe this behaviour in Google Chrome, Instagram or Facebook apps. I wanted to integrate something like that on one of the app I&rsquo;m working on, over at <a href="http://www.fancypixel.it">Fancy Pixel</a>, but couldn&rsquo;t find anything that did the job as I intended. What better motivation to do some OSS?</p>
+
+<h3>Writing the code</h3>
+
+<p>In cases like this, writing the code is more a series of trial and error, so instead of TDD I use a more <em>sample driven</em> approach. This means that I just fire up XCode, create a new project and start fiddling around with the SDK. That&rsquo;s the best part of the job.</p>
+
+<p>Letting the <code>UINavigationBar</code> scroll out of the way was fairly easy, I just needed to add a <code>UIGestureRecognizer</code> to the <code>UIScrollView</code> with the content.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIPanGestureRecognizer</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithTarget:</span><span class="n">self</span> <span class="nl">action:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">handlePan:</span><span class="p">)];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="nl">setMaximumNumberOfTouches:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="nl">setDelegate:</span><span class="n">self</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">addGestureRecognizer:</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That alone won&rsquo;t do the trick though, we need to override a delegate method of the <code>UIGestureRecognizerDelegate</code> protocol:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nf">gestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">*</span><span class="p">)</span><span class="nv">gestureRecognizer</span> <span class="nf">shouldRecognizeSimultaneouslyWithGestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">*</span><span class="p">)</span><span class="nv">otherGestureRecognizer</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Returning <code>YES</code> in this method will allow both the scrollview and the gesture recognizer to work at the same time. Cool.
+Now it&rsquo;s time to stretch <code>UINavigationBar</code>&rsquo;s leg. Here&rsquo;s an abstract of the code that does that:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">scrollWithDelta:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="nv">delta</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">CGRect</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">delta</span> <span class="o">=</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>      
+</span><span class='line'>  <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">MAX</span><span class="p">(</span><span class="o">-</span><span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">,</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>      
+</span><span class='line'>  <span class="p">[</span><span class="n">self</span> <span class="nl">updateSizingWithDelta:</span><span class="n">delta</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see the <code>UINavigationBar</code> has its own frame, that you can easily modify. Once I got the navigation bar following the scroll view, I needed to enlarge or reduce the scroll views&#8217; frame to leverage all the remaining screen estate. Big chunk of code coming up:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">updateSizingWithDelta:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="nv">delta</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// At this point the navigation bar is already been placed in the right position, it&#39;ll be the reference point for the other views&#39;sizing</span>
+</span><span class='line'>  <span class="n">CGRect</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">[</span><span class="n">self</span> <span class="nl">updateNavbarAlpha:</span><span class="n">delta</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Move and expand (or shrink) the superview of the given scrollview</span>
+</span><span class='line'>  <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-=</span> <span class="n">delta</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">+=</span> <span class="n">delta</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// if the scrolling view is a UIWebView, we need to adjust its scrollview&#39;s frame.</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIWebView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Keeps the view&#39;s scroll position steady until the navbar is gone</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIScrollView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">[(</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">setContentOffset:</span><span class="n">CGPointMake</span><span class="p">(((</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">((</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)];</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIWebView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">[((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span> <span class="nl">setContentOffset:</span><span class="n">CGPointMake</span><span class="p">(((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)];</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Fairly easy to read, kinda tricky to write. The scrollview&rsquo;s height is increased by the scroll&rsquo;s delta, and its origin is shifted up or down of the same amount. With a little reflection I can check wether the scroll view is a normal <code>UIScrollView</code> (and this includes table views) or a <code>UIWebView</code>. The later has its own scroll view, so I need to adjust that instead.<br/>
+With the view sizing complete, the last step was to fade out the navigation items. I used a hacky approach, since I wasn&rsquo;t able to set the alpha channel of every nav item, I figured I could just impose an overlay view with the same <code>barTintColor</code>, and change its alpha back and forth:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">updateNavbarAlpha:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="nv">delta</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">CGRect</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// Change the alpha channel of every item on the navbr. The overlay will appear, while the other objects will disappear, and vice versa</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">)</span> <span class="o">/</span> <span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">overlay</span> <span class="nl">setAlpha:</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">];</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">leftBarButtonItems</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIBarButtonItem</span><span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">obj</span><span class="p">.</span><span class="n">customView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}];</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">rightBarButtonItems</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIBarButtonItem</span><span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">obj</span><span class="p">.</span><span class="n">customView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}];</span>
+</span><span class='line'>  <span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">titleView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">tintColor</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">tintColor</span> <span class="nl">colorWithAlphaComponent:</span><span class="n">alpha</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And that did the trick.</p>
+
+<h3>Getting camera ready</h3>
+
+<p>Once the sample runs like I intended, I step in the refactoring phase. In this step I just take all the code and move it in a reusable object. In this case I opted for a <code>UIViewController</code> that can be subclassed by other developers. I valued the possibility of a category, but since I make an extensive use of instance variables, I preferred the first approach (not a fan of the <code>associatedObject</code> trick).<br/>
+The last item on the todo list is the refactoring of the sample project. And we&rsquo;re done.</p>
+
+<h3>Writing the documentation</h3>
+
+<p>An open source project is as good as its documentation is. It helps the first implementation by other devs, and most of all helps them decide wether to use your library or not. In some way it&rsquo;s marketing, withouth the <em>market</em> part.<br/>
+I like to spend some time to add comments following the <a href="http://nshipster.com/documentation/">Appledoc notation</a>. This will provide a comprehensive quick guide in XCode, and also will generate an Apple-like documentation in the <a href="http://cocoadocs.org/docsets/AMScrollingNavbar/0.5.4/Classes/AMScrollingCollectionViewController.html">Cocoapods pages</a>.
+As you can see the syntax is easy to write and to understand:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="cm">/** Scrolling init method</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * Enables the scrolling on a generic UIView.</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * @param scrollableView The UIView where the scrolling is performed.</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">followScrollView:</span><span class="p">(</span><span class="n">UIView</span><span class="o">*</span><span class="p">)</span><span class="nv">scrollableView</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then it&rsquo;s time to push all the work on Github, and this calls for a good README file. The README should have a quick description of the library, the setup instructions, the library&rsquo;s documentation or a reference to it, and a screenshot, when possible.</p>
+
+<h4>Screenshot</h4>
+
+<p>Following the principle <em>&ldquo;show, don&rsquo;t tell&rdquo;</em>, screenshots work great, but GIFs are even better. Creating a GIF animation with your sample running is easy as pie, using <a href="http://www.cockos.com/licecap/">LICEcap</a>. Despite its weird name and lowres icon, LICEcap is an invaluable tool, easy to use and extremely versatile, you just fit the portion of the screen that you want to record inside its window, hit record, and you are done.</p>
+
+<p><img class="center" src="http://andreamazz.github.io/images/posts/2014-02-01/licecap.png" title="'LICEcap'" ></p>
+
+<p>You might want to resize the output GIF, if you are capturing a big part of the screen, or if you are working on a retina display. <a href="http://www.imagemagick.org/script/index.php">ImageMagick</a> comes to the rescue:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>convert big.gif -coalesce temp.gif
+</span><span class='line'>convert -size 960x640 temp.gif -resize 480x320 small.gif</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Travis CI</h3>
+
+<p><a href="https://travis-ci.org/">Travis CI</a> is a continuous integration tool, used to build and test projects hosted on Github. Having Travis enabled in an open source project is a great way to make sure that your project <em>compiles</em> fine. This is awesome for your new releases (you know before hand if your last commit broke something) and even better for pull requests, since Travis tells you wether a pull request compiles without errors, directly in the github page of the PR.<br/>
+To start using Travis, head <a href="https://travis-ci.org/">here</a>, login with Github, and enable your project from the list in your dashboard.<br/>
+Enabling Travis with iOS is really easy, it only takes two steps:</p>
+
+<h4>Configure build scheme</h4>
+
+<p>Open your sample project, or the project component that you want to build, and in the Manage Schemes panel, make sure that your project scheme is <code>Shared</code>:
+<img class="center" src="http://andreamazz.github.io/images/posts/2014-02-01/schemes.png" title="'Schemes'" ></p>
+
+<h4>Add .travis.yml</h4>
+
+<p>Add a <code>.travis.yml</code> file in your project root. You&rsquo;ll be writing a simple script that will compile your sample project:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>language: objective-c
+</span><span class='line'>install:
+</span><span class='line'>- cd ScrollingNavbarDemo
+</span><span class='line'>script: xctool -project ScrollingNavbarDemo.xcodeproj -scheme 'ScrollingNavbarDemo' -configuration Release -sdk iphonesimulator7.0 -arch i386 build</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>install</code> phase just changes the directory to the one containing the project, then our trusty xctool compiles the project. Doesn&rsquo;t get much easier than that.</p>
+
+<p>Once you pushed the new release, the project will be added to the travis compile queue, and you&rsquo;ll receive an email with the result. You can also see the script running in real time, which is awesome.</p>
+
+<h3>Cocoapods</h3>
+
+<p>There is no need to reiterate that <a href="http://cocoapods.org/">Cocoapods</a> is <em>great</em>. The times when you spent precious time configuring a new library in your project are (<a href="http://andreamazz.github.io/blog/2014/01/25/configuring-alljoyn-on-ios/">almost</a>) over. Creating a pod is a matter of minutes, and at the same times provides great value for the community.<br/>
+You&rsquo;ll find a pretty extensive guide on the <a href="http://guides.cocoapods.org/making/making-a-cocoapod.html">cocoapods site</a>.
+Here&rsquo;s what my podspec looks like:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="ss">Pod</span><span class="p">:</span><span class="ss">:Spec</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">name</span>         <span class="o">=</span> <span class="s2">&quot;AMScrollingNavbar&quot;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">version</span>      <span class="o">=</span> <span class="s2">&quot;0.5&quot;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">summary</span>      <span class="o">=</span> <span class="s2">&quot;Scrollable UINavigationBar that follows the scrolling of a UIScrollView. Similiar to Chrome for iOS7&quot;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">homepage</span>     <span class="o">=</span> <span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar&quot;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">license</span>      <span class="o">=</span> <span class="p">{</span> <span class="ss">:type</span> <span class="o">=&gt;</span> <span class="s1">&#39;MIT&#39;</span><span class="p">,</span> <span class="ss">:file</span> <span class="o">=&gt;</span> <span class="s1">&#39;LICENSE&#39;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">author</span>       <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;Andrea Mazzini&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;andrea.mazzini@gmail.com&quot;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">source</span>       <span class="o">=</span> <span class="p">{</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar.git&quot;</span><span class="p">,</span> <span class="ss">:tag</span> <span class="o">=&gt;</span> <span class="s1">&#39;0.5&#39;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">platform</span>     <span class="o">=</span> <span class="ss">:ios</span><span class="p">,</span> <span class="s1">&#39;5.0&#39;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">source_files</span> <span class="o">=</span> <span class="s1">&#39;AMScrollingNavbar&#39;</span><span class="p">,</span> <span class="s1">&#39;*.{h,m}&#39;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">requires_arc</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the spec is merged in the Spec repo, a new pod is born, and with it the documentation page is also generated.</p>
+
+<h4>Cocoacontrols</h4>
+
+<p><a href="https://www.cocoacontrols.com/">Cocoacontrols</a> is my favourite place to window shop for new libraries. As soon as my pod is ready and I feel that the README is comprehensive enough, I submit my control to cocoacontrols&#8217; review queue. It&rsquo;s a great way to get some visibility from fellow developers, and a great way to discover new controls. A big thanks to <a href="https://www.cocoacontrols.com/about">Aaron, Marine and Bob</a>.</p>
+
+<h3>Maintaining the code</h3>
+
+<p>Once the code is in the wild, it&rsquo;s time to maintain the code. This means answering questions about its use, fixing possible issues and merging the always welcome pull requests. It can become a job of its own at times, but it&rsquo;s a high reward task, since it gives you the chance to experiment more and improve your code quite a lot.<br/>
+The only tool that I use is the <code>Issue</code> section of github. I tried once to get into the habit of tracking the issues with <a href="https://waffle.io/">Waffle</a>, but in the end I never really used it efficently.<br/>
+AMScrollingNavbar was well received, and has now (what is for me) a fair amount of stargazers on Github. I&rsquo;d like to thank all the contributors that helped to improve the library, introducing new features and fixing my missteps.</p>
+
+<p>That about wraps up this autoreferential post.<br/>
+Until next time.<br/>
+Andrea</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Configuring Alljoyn on iOS]]></title>
