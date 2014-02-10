@@ -5,7 +5,7 @@ date: 2014-02-01 12:07
 comments: true
 categories: ios objc cocoapods
 ---
-This week [Matt Thompson](https://twitter.com/mattt) published an interesting article on NSHipster, about [stewardship](http://nshipster.com/stewardship/), which is basically _the duty and ethic of public service_. Since I've been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I'm writing a new library for iOS. I'll be describing my work on [AMScrollingNavbar](https://github.com/andreamazz/AMScrollingNavbar).
+This week [Matt Thompson](https://twitter.com/mattt) published an interesting article on NSHipster, about [stewardship](http://nshipster.com/stewardship/), which is basically _the duty and ethic of public service_. Since I've been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I'm writing a new library for iOS. I'll be describing my work on [AMScrollingNavbar](https://github.com/andreamazz/AMScrollingNavbar) as an example.
 <!-- More -->
 ```AMScrollingNavbar``` is a simple iOS library that lets you implement a ```UINavigationBar``` that scrolls out of the way when the user is scrolling the content of the app. You can observe this behavior in Google Chrome, Instagram or Facebook apps. I wanted to integrate something like that on one of the app I'm working on, over at [Fancy Pixel](http://www.fancypixel.it), but couldn't find anything that did the job as I intended. What better motivation to do some OSS?
 
