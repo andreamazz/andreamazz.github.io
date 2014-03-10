@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Hey iOS"
+title: "Hey iOS, I like you, we should be friends"
 date: 2014-03-10 19:30
 comments: true
 categories: ios objc
