@@ -1,0 +1,14 @@
+---
+layout: post
+title: "Hey iOS"
+date: 2014-03-10 19:30
+comments: true
+categories: ios objc
+---
+I started this year with a new year's resolution: _write at least a blog post per month_. Let me check the date of the last post.... yep, February 1st, ok, I screwed up. In my defence it's been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (Memento: I know this place), and also rewrote the [landing page](http://memento.fancypixel.it) for it. Keep in mind, I'm an engineer, design and grahics are just an hobby for me.  
+I had a chance to try out some cool libraries and tools though, so here's my belated post of the month. The title itself is there just to express my love for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling, just staggering. Love it.  
+<!-- More -->
+####Either I'm drunk or the parallax effect is too heavy
+Parallax effect is the new gimmick of iOS7, and it's so Apple-y: it's simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.
+
+To be continued
