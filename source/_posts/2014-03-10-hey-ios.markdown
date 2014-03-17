@@ -5,10 +5,23 @@ date: 2014-03-10 19:30
 comments: true
 categories: ios objc
 ---
-I started this year with a new year's resolution: _write at least a blog post per month_. Let me check the date of the last post.... yep, February 1st, ok, I screwed up. In my defence it's been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (Memento: I know this place), and also rewrote the [landing page](http://memento.fancypixel.it) for it. Keep in mind, I'm an engineer, design and grahics are just an hobby for me.  
+I started this year with a new year's resolution: _write at least a blog post per month_. Let me check the date of the last post.... yep, February 1st, oops, my bad. In my defence it's been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (Memento: I know this place), and also rewrote the [landing page](http://memento.fancypixel.it) for it. Keep in mind, I'm an engineer, design and grahics are just an hobby for me.  
 I had a chance to try out some cool libraries and tools though, so here's my belated post of the month. The title itself is there just to express my love for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling, just staggering. Love it.  
 <!-- More -->
 ####Either I'm drunk or the parallax effect is too heavy
-Parallax effect is the new gimmick of iOS7, and it's so Apple-y: it's simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.
+Parallax effect is the new gimmick of iOS7, and it's so Apple-y: it's simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.  
+
+######NGAParallaxMotion
+That's a pretty stright forward library. You already know all too well the effect, just look at the springboard. [NGAParallaxMotion](https://github.com/michaeljbishop/NGAParallaxMotion) makes it easy as pie to implement, just pop the pod in your podfile, and use the parallaxIntensity property. It can be also used by a designer with no coding skill, stright in an XCode storyboard. Kudos to [Michael Bishop](https://github.com/michaeljbishop), I wish I thought of that.
+
+######CSStickyHeaderFlowLayout
+I like the iOS7 Twitter profile section. You scroll down, the profile background explodes and gets blurry. It's purely a cosmetic thing, makes no sense and that's why it's awesome. I like it so much that I decided to implement it in Memento. Enters [CSStickyHeaderFlowLayout](https://github.com/jamztang/CSStickyHeaderFlowLayout). I was going to write a couple of lines describing how to implement it, but I see that the author just added a pretty comprehensive readme. So, tip of the hat to you [James Tang](https://github.com/jamztang)!
+
+####Photo galleries are boring
+They are. It's even worse when you open up a photo, you pinch, you tap away to dismiss it... been there, done that. [URBMediaFocusViewController](https://github.com/u10int/URBMediaFocusViewController) adds a little UIDynamics flavor to the mix, blurs the background and adds the parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It's a brilliant piece of software, really.
+
+
+####Take off the boots
+Purecss
 
 To be continued
