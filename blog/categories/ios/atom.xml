@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-02-02T15:44:07+01:00</updated>
+  <updated>2014-03-29T15:34:30+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -14,11 +14,90 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Hey iOS, I like you, we should be friends]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/03/10/hey-ios/"/>
+    <updated>2014-03-10T19:30:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/03/10/hey-ios</id>
+    <content type="html"><![CDATA[<p>I started this year with a new year&rsquo;s resolution: <em>write at least a blog post per month</em>. Let me check the date of the last post&hellip;. yep, February 1st, oops, my bad. In my defense it&rsquo;s been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (<a href="https://itunes.apple.com/us/app/memento-i-know-this-place/id698153906?l=it&amp;ls=1&amp;mt=8">Memento: I know this place</a>), and also rewrote the <a href="http://memento.fancypixel.it">landing page</a> for it.<br/>
+I had a chance to try out some cool libraries and tools though, so here&rsquo;s my belated post of the month. The title itself is there just to express my appreciation for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling. Love it.</p>
+
+<!-- More -->
+
+
+<h4>Either I&rsquo;m drunk or the parallax effect is too heavy</h4>
+
+<p>Parallax effect is the new gimmick of iOS7, and it&rsquo;s so Apple-y: it&rsquo;s simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.</p>
+
+<h6>NGAParallaxMotion</h6>
+
+<p>That&rsquo;s a pretty straight forward library. You already know all too well the effect, just look at the springboard. <a href="https://github.com/michaeljbishop/NGAParallaxMotion">NGAParallaxMotion</a> makes it easy as pie to implement, just pop the pod in your podfile, and use the parallaxIntensity property. It can be also used by a designer with no coding skill, straight in an XCode storyboard. Kudos to <a href="https://github.com/michaeljbishop">Michael Bishop</a>, I wish I thought of that.</p>
+
+<h6>CSStickyHeaderFlowLayout</h6>
+
+<p>I like the iOS7 Twitter profile section. You scroll down, the profile background explodes and gets blurry. It&rsquo;s purely a cosmetic thing, makes no sense and that&rsquo;s why it&rsquo;s awesome. I like it so much that I decided to implement it in Memento. Enters <a href="https://github.com/jamztang/CSStickyHeaderFlowLayout">CSStickyHeaderFlowLayout</a>.</p>
+
+<p><img class="center" src="/images/posts/2014-03-10/memento.gif" title="&lsquo;CSStickyHeaderFlowLayout&rsquo;" ></p>
+
+<p>I was going to write a couple of lines describing how to implement it, but I see that the author just added a pretty comprehensive readme. So, tip of the hat to you <a href="https://github.com/jamztang">James Tang</a>!</p>
+
+<h4>Blur everything!</h4>
+
+<p>Blur is another big design thing in iOS7. In a recent project I found myself using <a href="https://github.com/andreamazz/REFrostedViewController">REFrostedViewController</a> to present a side menu. For a more concise menu (e.g.: to present a quick options menu) I use <a href="https://github.com/rnystrom/RNFrostedSidebar">RNFrostedSidebar</a>, another impressive piece of software, clean and effective. You&rsquo;ll find a modified version where you can add labels beneath the items on my <a href="https://github.com/andreamazz/RNFrostedSidebar">github page</a>.<br/>
+What about plain views? I happen to use <a href="https://github.com/JagCesar/iOS-blur">JCRBlurView</a> to obtain a fast and effective blur. It&rsquo;s brilliant, it &lsquo;steals&rsquo; the layer from a UIToolBar and makes it its own. I used the same technique in my <a href="https://github.com/andreamazz/AMDraggableBlurView">AMDraggableBlurView</a>.
+Wait&hellip; steal a cocoa layer to use in one of your views&hellip; that smells fishy&hellip; and here&rsquo;s the catch: it&rsquo;s been reported that applications that use such method might get refused.<br/>
+What I found out is that one of the <a href="https://itunes.apple.com/it/app/palmap-pro/id525999547?mt=8">app that I developed for a client</a> got into the store with no hiccups, but once I opened it from an iPad Mini retina I found out that the blurred view was 100% transparent. No blur, no view, just a transparent container.<br/>
+Lesson learned. From now on I&rsquo;ll be using <a href="https://github.com/nicklockwood/FXBlurView">FXBlurView</a>. BTW, if you happen to use the blurred view from <a href="http://canvaspod.io/">Canvas</a> you should know that they use the same method.</p>
+
+<h4>Photo galleries are boring</h4>
+
+<p>They are. It&rsquo;s even worse when you open up a photo, you pinch, you tap away to dismiss it&hellip; been there, done that. <a href="https://github.com/u10int/URBMediaFocusViewController">URBMediaFocusViewController</a> adds a little UIDynamics flavor to the mix, blurs the background and adds some parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It&rsquo;s a brilliant piece of software, really.</p>
+
+<h4>Liftoff</h4>
+
+<p><a href="https://github.com/thoughtbot/liftoff">Liftoff</a> is a cool little <em>opinionated</em> tool from the <a href="http://thoughtbot.com/">Thoughtbot</a> guys. In a couple of quick steps you can setup an Xcode project to use:
+&ndash; 4 spaces indentation level
+&ndash; warning treated as errors
+&ndash; Static Analysis
+&ndash; TODO and FIXME treated as warnings
+&ndash; a precompiled .gitignore and .gitattributes.</p>
+
+<p>It also can be used to create a brand new project, reducing the time spent reorganizing stuff to match the common (sense) conventions.<br/>
+Using it is easy as pie:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install liftoff
+</span><span class='line'>liftoff</span></code></pre></td></tr></table></div></figure></notextile></div>
+That&rsquo;s it.</p>
+
+<h4>Take off the boot(strap)s</h4>
+
+<p>That&rsquo;s unrelated to iOS per se, but since I found myself styling the landing page for <a href="http://memento.fancypixel.it">Memento: I know this place</a> I might as well spent a couple of lines on Pure.<br/>
+<a href="http://purecss.io/">Pure</a> is a pure css responsive web framework. It&rsquo;s unbelievably tiny, with a 4.5KB footprint, and also modular (so if you just need the grid system, you can just include that along with the base classes). If you have experience with Bootstrap or Zurb, you&rsquo;ll find yourself at home with their grid system and components. It can give a site a breath of fresh air. Checkout their <a href="http://purecss.io/layouts/">layout samples</a>.</p>
+
+<h4>My stuff</h4>
+
+<p>I try to keep myself busy in the iOS open-source community as well, so I&rsquo;ll sign off with the links of the new pods that I developed in the last two months, hoping that they might come in handy:</p>
+
+<ul>
+<li><a href="https://github.com/andreamazz/UIView-Shake">UIView+Shake</a>: UIView category that adds a shake animation like the password field of the OsX login screen.</li>
+<li><a href="https://github.com/andreamazz/UIView-draggable">UIView+draggable</a>: UIView category that adds dragging capabilities.</li>
+<li><a href="https://github.com/andreamazz/AMTagListView">AMTagListView</a>: UIScrollView subclass that allows to add a list of highly customizable tags.</li>
+<li><a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a>: Scrollable UINavigationBar that follows the scrolling of a UIScrollView, now updated to be integrated as a UIViewController&rsquo;s category.</li>
+</ul>
+
+
+<p>That&rsquo;s all for now.<br/>
+Cheers.
+Andrea</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[AMScrollingNavbar: creating a cocoapod]]></title>
     <link href="http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod/"/>
     <updated>2014-02-01T12:07:00+01:00</updated>
     <id>http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod</id>
-    <content type="html"><![CDATA[<p>This week <a href="https://twitter.com/mattt">Matt Thompson</a> published an interesting article on NSHipster, about <a href="http://nshipster.com/stewardship/">stewardship</a>, which is basically <em>the duty and ethic of public service</em>. Since I&rsquo;ve been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I&rsquo;m writing a new library for iOS. I&rsquo;ll be describing my work on <a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a>.</p>
+    <content type="html"><![CDATA[<p>This week <a href="https://twitter.com/mattt">Matt Thompson</a> published an interesting article on NSHipster, about <a href="http://nshipster.com/stewardship/">stewardship</a>, which is basically <em>the duty and ethic of public service</em>. Since I&rsquo;ve been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I&rsquo;m writing a new library for iOS. I&rsquo;ll be describing my work on <a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a> as an example.</p>
 
 <!-- More -->
 
@@ -295,7 +374,7 @@ Here&rsquo;s what my podspec looks like:
 </span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">summary</span>      <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">Scrollable</span> <span class="no">UINavigationBar</span> <span class="n">that</span> <span class="n">follows</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">of</span> <span class="n">a</span> <span class="no">UIScrollView</span><span class="o">.</span> <span class="no">Similiar</span> <span class="n">to</span> <span class="no">Chrome</span> <span class="k">for</span> <span class="n">iOS7</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
 </span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">homepage</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;</span>
 </span><span class='line'><span class="sr">  s.license      = { :type =&gt; &amp;lsquo;MIT&amp;rsquo;, :file =&gt; &amp;lsquo;LICENSE&amp;rsquo; }</span>
-</span><span class='line'><span class="sr">  s.author       = { &amp;ldquo;Andrea Mazzini&amp;rdquo; =&gt; &amp;ldquo;&lt;a href=&quot;&amp;#109;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#116;&amp;#x6f;&amp;#x3a;&amp;#97;&amp;#110;&amp;#100;&amp;#114;&amp;#x65;&amp;#97;&amp;#x2e;&amp;#109;&amp;#97;&amp;#x7a;&amp;#122;&amp;#x69;&amp;#x6e;&amp;#x69;&amp;#64;&amp;#103;&amp;#109;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#46;&amp;#99;&amp;#x6f;&amp;#x6d;&quot;&gt;&amp;#x61;&amp;#x6e;&amp;#100;&amp;#114;&amp;#x65;&amp;#x61;&amp;#x2e;&amp;#109;&amp;#97;&amp;#122;&amp;#122;&amp;#x69;&amp;#110;&amp;#x69;&amp;#x40;&amp;#103;&amp;#109;&amp;#x61;&amp;#105;&amp;#x6c;&amp;#x2e;&amp;#99;&amp;#x6f;&amp;#x6d;&lt;/</span><span class="n">a</span><span class="o">&gt;&amp;</span><span class="n">rdquo</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="sr">  s.author       = { &amp;ldquo;Andrea Mazzini&amp;rdquo; =&gt; &amp;ldquo;&lt;a href=&quot;&amp;#109;&amp;#x61;&amp;#x69;&amp;#108;&amp;#116;&amp;#111;&amp;#58;&amp;#x61;&amp;#x6e;&amp;#100;&amp;#114;&amp;#x65;&amp;#97;&amp;#46;&amp;#109;&amp;#97;&amp;#x7a;&amp;#x7a;&amp;#x69;&amp;#x6e;&amp;#105;&amp;#64;&amp;#103;&amp;#x6d;&amp;#x61;&amp;#105;&amp;#108;&amp;#46;&amp;#99;&amp;#x6f;&amp;#109;&quot;&gt;&amp;#x61;&amp;#x6e;&amp;#100;&amp;#x72;&amp;#x65;&amp;#97;&amp;#46;&amp;#109;&amp;#x61;&amp;#122;&amp;#x7a;&amp;#105;&amp;#x6e;&amp;#x69;&amp;#64;&amp;#x67;&amp;#x6d;&amp;#97;&amp;#105;&amp;#108;&amp;#46;&amp;#99;&amp;#111;&amp;#x6d;&lt;/</span><span class="n">a</span><span class="o">&gt;&amp;</span><span class="n">rdquo</span><span class="p">;</span> <span class="p">}</span>
 </span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">source</span>       <span class="o">=</span> <span class="p">{</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar.git&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">.</span><span class="n">git</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;, :tag =&gt; &amp;lsquo;0.5&amp;rsquo; }</span>
 </span><span class='line'><span class="sr">  s.platform     = :ios, &amp;lsquo;5.0&amp;rsquo;</span>
 </span><span class='line'><span class="sr">  s.source_files = &amp;lsquo;AMScrollingNavbar&amp;rsquo;, &amp;lsquo;*.{h,m}&amp;rsquo;</span>
