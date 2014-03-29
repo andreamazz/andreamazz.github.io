@@ -5,23 +5,60 @@ date: 2014-03-10 19:30
 comments: true
 categories: ios objc
 ---
-I started this year with a new year's resolution: _write at least a blog post per month_. Let me check the date of the last post.... yep, February 1st, oops, my bad. In my defence it's been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (Memento: I know this place), and also rewrote the [landing page](http://memento.fancypixel.it) for it. Keep in mind, I'm an engineer, design and grahics are just an hobby for me.  
-I had a chance to try out some cool libraries and tools though, so here's my belated post of the month. The title itself is there just to express my love for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling, just staggering. Love it.  
+I started this year with a new year's resolution: _write at least a blog post per month_. Let me check the date of the last post.... yep, February 1st, oops, my bad. In my defense it's been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel ([Memento: I know this place](https://itunes.apple.com/us/app/memento-i-know-this-place/id698153906?l=it&ls=1&mt=8)), and also rewrote the [landing page](http://memento.fancypixel.it) for it.  
+I had a chance to try out some cool libraries and tools though, so here's my belated post of the month. The title itself is there just to express my appreciation for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling. Love it.  
 <!-- More -->
 ####Either I'm drunk or the parallax effect is too heavy
 Parallax effect is the new gimmick of iOS7, and it's so Apple-y: it's simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.  
 
 ######NGAParallaxMotion
-That's a pretty stright forward library. You already know all too well the effect, just look at the springboard. [NGAParallaxMotion](https://github.com/michaeljbishop/NGAParallaxMotion) makes it easy as pie to implement, just pop the pod in your podfile, and use the parallaxIntensity property. It can be also used by a designer with no coding skill, stright in an XCode storyboard. Kudos to [Michael Bishop](https://github.com/michaeljbishop), I wish I thought of that.
+That's a pretty straight forward library. You already know all too well the effect, just look at the springboard. [NGAParallaxMotion](https://github.com/michaeljbishop/NGAParallaxMotion) makes it easy as pie to implement, just pop the pod in your podfile, and use the parallaxIntensity property. It can be also used by a designer with no coding skill, straight in an XCode storyboard. Kudos to [Michael Bishop](https://github.com/michaeljbishop), I wish I thought of that.
 
 ######CSStickyHeaderFlowLayout
-I like the iOS7 Twitter profile section. You scroll down, the profile background explodes and gets blurry. It's purely a cosmetic thing, makes no sense and that's why it's awesome. I like it so much that I decided to implement it in Memento. Enters [CSStickyHeaderFlowLayout](https://github.com/jamztang/CSStickyHeaderFlowLayout). I was going to write a couple of lines describing how to implement it, but I see that the author just added a pretty comprehensive readme. So, tip of the hat to you [James Tang](https://github.com/jamztang)!
+I like the iOS7 Twitter profile section. You scroll down, the profile background explodes and gets blurry. It's purely a cosmetic thing, makes no sense and that's why it's awesome. I like it so much that I decided to implement it in Memento. Enters [CSStickyHeaderFlowLayout](https://github.com/jamztang/CSStickyHeaderFlowLayout).
+
+{% img center /images/posts/2014-03-10/memento.gif 'CSStickyHeaderFlowLayout' %}
+
+I was going to write a couple of lines describing how to implement it, but I see that the author just added a pretty comprehensive readme. So, tip of the hat to you [James Tang](https://github.com/jamztang)!
+
+####Blur everything!
+Blur is another big design thing in iOS7. In a recent project I found myself using [REFrostedViewController](https://github.com/andreamazz/REFrostedViewController) to present a side menu. For a more concise menu (e.g.: to present a quick options menu) I use [RNFrostedSidebar](https://github.com/rnystrom/RNFrostedSidebar), another impressive piece of software, clean and effective. You'll find a modified version where you can add labels beneath the items on my [github page](https://github.com/andreamazz/RNFrostedSidebar).  
+What about plain views? I happen to use [JCRBlurView](https://github.com/JagCesar/iOS-blur) to obtain a fast and effective blur. It's brilliant, it 'steals' the layer from a UIToolBar and makes it its own. I used the same technique in my [AMDraggableBlurView](https://github.com/andreamazz/AMDraggableBlurView). 
+Wait... steal a cocoa layer to use in one of your views... that smells fishy... and here's the catch: it's been reported that applications that use such method might get refused.  
+What I found out is that one of the [app that I developed for a client](https://itunes.apple.com/it/app/palmap-pro/id525999547?mt=8) got into the store with no hiccups, but once I opened it from an iPad Mini retina I found out that the blurred view was 100% transparent. No blur, no view, just a transparent container.  
+Lesson learned. From now on I'll be using [FXBlurView](https://github.com/nicklockwood/FXBlurView). BTW, if you happen to use the blurred view from [Canvas](http://canvaspod.io/) you should know that they use the same method.  
 
 ####Photo galleries are boring
-They are. It's even worse when you open up a photo, you pinch, you tap away to dismiss it... been there, done that. [URBMediaFocusViewController](https://github.com/u10int/URBMediaFocusViewController) adds a little UIDynamics flavor to the mix, blurs the background and adds the parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It's a brilliant piece of software, really.
+They are. It's even worse when you open up a photo, you pinch, you tap away to dismiss it... been there, done that. [URBMediaFocusViewController](https://github.com/u10int/URBMediaFocusViewController) adds a little UIDynamics flavor to the mix, blurs the background and adds some parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It's a brilliant piece of software, really.
 
+####Liftoff
+[Liftoff](https://github.com/thoughtbot/liftoff) is a cool little _opinionated_ tool from the [Thoughtbot](http://thoughtbot.com/) guys. In a couple of quick steps you can setup an Xcode project to use:
+- 4 spaces indentation level
+- warning treated as errors
+- Static Analysis
+- TODO and FIXME treated as warnings
+- a precompiled .gitignore and .gitattributes.
 
-####Take off the boots
-Purecss
+It also can be used to create a brand new project, reducing the time spent reorganizing stuff to match the common (sense) conventions.  
+Using it is easy as pie:
+{% codeblock %}
+brew install liftoff
+liftoff
+{% endcodeblock %}
+That's it.
 
-To be continued
+####Take off the boot(strap)s
+That's unrelated to iOS per se, but since I found myself styling the landing page for [Memento: I know this place](http://memento.fancypixel.it) I might as well spent a couple of lines on Pure.  
+[Pure](http://purecss.io/) is a pure css responsive web framework. It's unbelievably tiny, with a 4.5KB footprint, and also modular (so if you just need the grid system, you can just include that along with the base classes). If you have experience with Bootstrap or Zurb, you'll find yourself at home with their grid system and components. It can give a site a breath of fresh air. Checkout their [layout samples](http://purecss.io/layouts/).
+
+####My stuff
+I try to keep myself busy in the iOS open-source community as well, so I'll sign off with the links of the new pods that I developed in the last two months, hoping that they might come in handy:  
+
+- [UIView+Shake](https://github.com/andreamazz/UIView-Shake): UIView category that adds a shake animation like the password field of the OsX login screen. 
+- [UIView+draggable](https://github.com/andreamazz/UIView-draggable): UIView category that adds dragging capabilities. 
+- [AMTagListView](https://github.com/andreamazz/AMTagListView): UIScrollView subclass that allows to add a list of highly customizable tags.  
+- [AMScrollingNavbar](https://github.com/andreamazz/AMScrollingNavbar): Scrollable UINavigationBar that follows the scrolling of a UIScrollView, now updated to be integrated as a UIViewController's category.
+
+That's all for now.  
+Cheers. 
+Andrea
