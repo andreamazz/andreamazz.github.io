@@ -143,10 +143,14 @@ And our cells need to be transparent too:
 }
 {% endcodeblock %}
 
-Now we can take the new animator for a spin, by returning it in the `navigationController:animationControllerForOperation:fromViewController:toViewController:` method.  
+Now we can take the new animator for a spin, by returning it in the delegate method: 
 
-Here's the result:
-{% img center /images/posts/2014-04-19/screenshot.gif 'Result' %}
+`navigationController:animationControllerForOperation:fromViewController:toViewController:`
+
+Here's the result: 
+
+{% img center /images/posts/2014-04-19/screenshot.gif 'Result' %} 
+
 It's not perfect, but it can be easily tweaked.
 
 ###The code
