@@ -4,7 +4,7 @@
   <title><![CDATA[Category: objc | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/objc/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-03-29T15:34:30+01:00</updated>
+  <updated>2014-04-21T16:11:28+02:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -12,6 +12,276 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Transitioning]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/04/19/transitioning/"/>
+    <updated>2014-04-19T19:30:00+02:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/04/19/transitioning</id>
+    <content type="html"><![CDATA[<p>I like to kick the morning off by visiting a handful of sites that collect cool app designs. One of my favorite is <a href="http://capptivate.co">Capptivate</a>. I often find myself browsing the site thinking &ldquo;I want one of that.&rdquo;. It&rsquo;s even better if the design triggers another question in my mind: &ldquo;How did they do that?!&rdquo;.<br/>
+I had one of these moments last week, looking at the push transition in <a href="http://capptivate.co/2014/02/04/paper/">Facebook&rsquo;s Paper</a> app. It was a good chance to take a stab at iOS7 custom transitions.</p>
+
+<!-- More -->
+
+
+<h3>Learning custom transitions</h3>
+
+<p>I won&rsquo;t be covering in depth the custom transition APIs in this post, just what I needed to learn to reproduce the aforementioned effect. The main reason is because there are already good sources that cover this matter, I learned a lot from NSScreencast&rsquo;s <a href="http://nsscreencast.com/episodes/86-ios-7-view-controller-transitions">&ldquo;iOS7 View controller Transitions&rdquo;</a> (the subscription fee is well worth all the quality content) and objc.io&rsquo;s <a href="http://www.objc.io/issue-5/view-controller-transitions.html">&ldquo;View controller transitions&rdquo;</a>. The former covers modal transitions, while the later coverage of push transitions was really helpful.</p>
+
+<h3>UINavigationController&rsquo;s delegate</h3>
+
+<p>iOS7 introduces a new set of delegate methods in UINavigationController&rsquo;s protocol:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="err">–</span> <span class="nl">navigationController:animationControllerForOperation:fromViewController:toViewController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationController:interactionControllerForAnimationController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerPreferredInterfaceOrientationForPresentation:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerSupportedInterfaceOrientations:</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The first one is the most interesting of the bunch, it&rsquo;s called when the navigation controller is ready to animate to a new state (or for better terms, when it&rsquo;s ready to perform a new <code>UINavigationControllerOperation</code>) and expects in return a new object that conforms to the <code>UIViewControllerAnimatedTransitioning</code> protocol. It also has a reference to the view controller that we are transitioning from and a reference to the controller that we are transitioning to:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">id</span><span class="o">&lt;</span><span class="n">UIViewControllerAnimatedTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>               <span class="nl">navigationController:</span><span class="p">(</span><span class="n">UINavigationController</span> <span class="o">*</span><span class="p">)</span><span class="n">navigationController</span>
+</span><span class='line'>    <span class="nl">animationControllerForOperation:</span><span class="p">(</span><span class="n">UINavigationControllerOperation</span><span class="p">)</span><span class="n">operation</span>
+</span><span class='line'>                 <span class="nl">fromViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="n">fromVC</span>
+</span><span class='line'>                   <span class="nl">toViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="n">toVC</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>UIViewControllerAnimatedTransitioning</h3>
+
+<p>Cool, we get notified when the navigation controller is ready to make its magic. Let&rsquo;s take a look at what kind of object it expects from us, by inspecting <code>UIViewControllerAnimatedTransitioning</code> protocol:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@protocol</span> <span class="nc">UIViewControllerAnimatedTransitioning</span> <span class="o">&lt;</span><span class="n">NSObject</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="n">NSTimeInterval</span><span class="p">)</span><span class="nl">transitionDuration:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="n">transitionContext</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">animateTransition:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="n">transitionContext</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@optional</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">animationEnded:</span><span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="n">transitionCompleted</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Easy enough&hellip; one call for the animation&rsquo;s duration and one call to perform said animation.<br/>
+Before diving into the code we might want to lay out our animation graphically. Let&rsquo;s fire up Sketch and draw something:</p>
+
+<p><img class="center" src="/images/posts/2014-04-19/sketch.png" title="&lsquo;Sketch&rsquo;" ></p>
+
+<p>Ok, so we have two view controllers, they both have table views, and we want to present the new cells with a slight delay each, while kicking the old cells to the other side, with the same delay.<br/>
+Let&rsquo;s break it down.</p>
+
+<p><em>From</em> ViewController:</p>
+
+<ul>
+<li>Get the visible cells in the table view</li>
+<li>Move each cell to the left by the screen width</li>
+<li>Fade out each cell</li>
+<li>On completion set the cells back to their position (we&rsquo;ll need them on <em>pop</em>)</li>
+</ul>
+
+
+<p><em>To</em> ViewController:</p>
+
+<ul>
+<li>Set the controller&rsquo;s frame to match the starting controller</li>
+<li>Move the controller&rsquo;s frame to the side</li>
+<li>Get the visible cells in the table view</li>
+<li>Push the cells to the right <em>with no animation</em></li>
+<li>Move each cell to the left</li>
+</ul>
+
+
+<p>That looks pretty simple, but there are couple of caveats.<br/>
+The first thing that I noticed is that the new cells are not available at first. The second issue was that if I moved the destination frame to match the source one right away, the source cells would disappear instantly.<br/>
+To solve these issues I had to use a little trick: use a <code>0</code> duration animation where I move the frame of the destination controller to the point <code>(1,0)</code>. This allows the destination controller to load its cells, and the source controller will still be visible.</p>
+
+<p>To sum it up (I&rsquo;ll include only the <em>push</em> code):
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Move the destination in place</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">source</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// And kick it aside</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// First step is required to trigger the load of the visible cells.</span>
+</span><span class='line'><span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="mi">0</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="nb">nil</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// Plain animation that moves the destination controller in place. Once it&#39;s done it will notify the transition context</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="o">^</span><span class="p">{</span>
+</span><span class='line'>                        <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>                <span class="p">}</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="p">[</span><span class="n">transitionContext</span> <span class="nl">completeTransition:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'>                <span class="p">}];</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Animates the cells of the starting view controller</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">fromVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="o">-</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">completion</span><span class="p">)(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">){</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="n">completion</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">toVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">toVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+This will get the cell animating back and forth, but the effect is far from impressive, we need some further tinkering.</p>
+
+<h3>Setting up the view controller</h3>
+
+<p>If you take a look at Paper, the cells move back and forth on the same background image, you can&rsquo;t see a clear cut from a view controller to the other. That&rsquo;s easy to achieve, we just need to configure our navigation controller like this:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="nl">colorWithPatternImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">background</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setBackgroundImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">navbar</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]</span> <span class="nl">forBarMetrics:</span><span class="n">UIBarMetricsDefault</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">tableView</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setTintColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">whiteColor</span><span class="p">]];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And our cells need to be transparent too:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="n">UITableViewCell</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="nl">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">tableView</span> <span class="nl">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="n">indexPath</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// ... </span>
+</span><span class='line'><span class="p">[</span><span class="n">cell</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">cell</span> <span class="nl">setSelectionStyle:</span><span class="n">UITableViewCellSelectionStyleNone</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// ...</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now we can take the new animator for a spin, by returning it in the <code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code> method.</p>
+
+<p>Here&rsquo;s the result:
+<img class="center" src="/images/posts/2014-04-19/screenshot.gif" title="&lsquo;Result&rsquo;" >
+It&rsquo;s not perfect, but it can be easily tweaked.</p>
+
+<h3>The code</h3>
+
+<p>I released all the code described above as a pod. It includes both the push and pop operations, and its fairly customizable.<br/>
+You can find the source <a href="https://github.com/andreamazz/AMWaveTransition">here</a>.</p>
+
+<p>Until next time.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Hey iOS, I like you, we should be friends]]></title>
@@ -374,7 +644,7 @@ Here&rsquo;s what my podspec looks like:
 </span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">summary</span>      <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">Scrollable</span> <span class="no">UINavigationBar</span> <span class="n">that</span> <span class="n">follows</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">of</span> <span class="n">a</span> <span class="no">UIScrollView</span><span class="o">.</span> <span class="no">Similiar</span> <span class="n">to</span> <span class="no">Chrome</span> <span class="k">for</span> <span class="n">iOS7</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
 </span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">homepage</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;</span>
 </span><span class='line'><span class="sr">  s.license      = { :type =&gt; &amp;lsquo;MIT&amp;rsquo;, :file =&gt; &amp;lsquo;LICENSE&amp;rsquo; }</span>
-</span><span class='line'><span class="sr">  s.author       = { &amp;ldquo;Andrea Mazzini&amp;rdquo; =&gt; &amp;ldquo;&lt;a href=&quot;&amp;#109;&amp;#x61;&amp;#x69;&amp;#108;&amp;#x74;&amp;#x6f;&amp;#x3a;&amp;#97;&amp;#110;&amp;#x64;&amp;#114;&amp;#x65;&amp;#x61;&amp;#46;&amp;#x6d;&amp;#x61;&amp;#122;&amp;#122;&amp;#x69;&amp;#x6e;&amp;#105;&amp;#64;&amp;#103;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#46;&amp;#x63;&amp;#111;&amp;#x6d;&quot;&gt;&amp;#x61;&amp;#x6e;&amp;#x64;&amp;#114;&amp;#101;&amp;#97;&amp;#x2e;&amp;#x6d;&amp;#97;&amp;#122;&amp;#x7a;&amp;#x69;&amp;#x6e;&amp;#x69;&amp;#64;&amp;#103;&amp;#x6d;&amp;#x61;&amp;#105;&amp;#x6c;&amp;#x2e;&amp;#99;&amp;#x6f;&amp;#109;&lt;/</span><span class="n">a</span><span class="o">&gt;&amp;</span><span class="n">rdquo</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="sr">  s.author       = { &amp;ldquo;Andrea Mazzini&amp;rdquo; =&gt; &amp;ldquo;&lt;a href=&quot;&amp;#109;&amp;#x61;&amp;#x69;&amp;#108;&amp;#116;&amp;#x6f;&amp;#x3a;&amp;#97;&amp;#110;&amp;#100;&amp;#114;&amp;#101;&amp;#97;&amp;#46;&amp;#109;&amp;#97;&amp;#122;&amp;#122;&amp;#x69;&amp;#x6e;&amp;#x69;&amp;#x40;&amp;#103;&amp;#109;&amp;#97;&amp;#105;&amp;#x6c;&amp;#x2e;&amp;#99;&amp;#x6f;&amp;#109;&quot;&gt;&amp;#97;&amp;#x6e;&amp;#x64;&amp;#x72;&amp;#x65;&amp;#97;&amp;#46;&amp;#x6d;&amp;#97;&amp;#122;&amp;#122;&amp;#105;&amp;#110;&amp;#105;&amp;#x40;&amp;#103;&amp;#109;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#46;&amp;#99;&amp;#x6f;&amp;#x6d;&lt;/</span><span class="n">a</span><span class="o">&gt;&amp;</span><span class="n">rdquo</span><span class="p">;</span> <span class="p">}</span>
 </span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">source</span>       <span class="o">=</span> <span class="p">{</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar.git&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">.</span><span class="n">git</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;, :tag =&gt; &amp;lsquo;0.5&amp;rsquo; }</span>
 </span><span class='line'><span class="sr">  s.platform     = :ios, &amp;lsquo;5.0&amp;rsquo;</span>
 </span><span class='line'><span class="sr">  s.source_files = &amp;lsquo;AMScrollingNavbar&amp;rsquo;, &amp;lsquo;*.{h,m}&amp;rsquo;</span>
@@ -977,200 +1247,6 @@ This should really apply to every good stub and mock.</p>
 
 <p>Until next time.<br/>
 Andrea</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS Test Setup]]></title>
-    <link href="http://andreamazz.github.io/blog/2014/01/06/ios-test-setup/"/>
-    <updated>2014-01-06T14:39:00+01:00</updated>
-    <id>http://andreamazz.github.io/blog/2014/01/06/ios-test-setup</id>
-    <content type="html"><![CDATA[<p>Yesterday I wrote an article with my Rails test setup, so it&rsquo;s right about the time to do the same for iOS. I&rsquo;ll be covering Specta, Expecta and KIF, plus OHHTTPStubs for&hellip; you know&hellip; stubs.</p>
-
-<!-- more -->
-
-
-<p>First thing first, as you can see from the previous post, I&rsquo;m not really into Cucumber. I have more of a <em>dev-first</em> approach for specs. That&rsquo;s the benefit of working on your own projects: you only have to explain things to yourself, who is usually a pretty cool guy and understands what you&rsquo;re saying. Most of the times at least.
-That being said, I&rsquo;m not a fan of the syntax that&rsquo;s <em>behind</em> the nice english-like specs, i.e. lots of regex. Welp!
-That brings me to my choice for UI Testing: KIF.
-KIF (Keep It Functional) is a pretty neat iOS integration framework, it uses the accessibility attributes embedded in every UIKit object to streamline integration testing. This means that you write your tests in plain old Objective-C, which is a big selling point for me.
-Tests won&rsquo;t read in fluid english-like sentences, like they do with Cucumber, but they still remain easy to write and easy to understand, even if your objc-fu is not strong.</p>
-
-<h4>Configuration</h4>
-
-<p>I&rsquo;ll be using <a href="http://www.cocoapods.org/">Cocoapods</a>, of course.
-First of all, you should already have a XCTest target ready. Make sure to add another one for the integration tests. I usually callit &lsquo;UI Tests&rsquo;.
-Here&rsquo;s the Podfile:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Podfile </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;target &quot;Project&quot; do</span>
-</span><span class='line'><span class="sr">    # your pods</span>
-</span><span class='line'><span class="sr">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">target &quot;Tests&quot;, :exclusive =&amp;gt; true do</span>
-</span><span class='line'><span class="sr">    pod &#39;Specta&#39;</span>
-</span><span class='line'><span class="sr">    pod &#39;Expecta&#39;</span>
-</span><span class='line'><span class="sr">    pod &#39;OHHTTPStubs&#39;, &#39;~&amp;gt; 3.0.2&#39;</span>
-</span><span class='line'><span class="sr">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">target &#39;UI Tests&#39;, :exclusive =&amp;gt; true do</span>
-</span><span class='line'><span class="sr">    pod &#39;KIF&#39;, &#39;~&amp;gt; 2.0&#39;, :inhibit_warnings =&amp;gt; true</span>
-</span><span class='line'><span class="sr">    pod &#39;OHHTTPStubs&#39;, &#39;~&amp;gt; 3.0.2&#39;   </span>
-</span><span class='line'><span class="sr">end</span>
-</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<h5>Feature tests</h5>
-
-<p>After a <code>pod install</code> everything will be ready, so we can <code>open Project.xcworkspace</code>
-As for Specta we should already be set, so we can just head to our Tests target and start adding specs. Note that I added also Expecta, to have a RSpec 2 like syntax.
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Specta</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">EXP_SHORTHAND</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">Expecta</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">SpecBegin</span><span class="p">(</span><span class="n">Thing</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">describe</span><span class="p">(</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Something</span> <span class="n">cool</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">it</span><span class="p">(</span><span class="s">@&quot;does something amazing&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
-</span><span class='line'>    <span class="n">expect</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">to</span><span class="p">.</span><span class="n">equal</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">SpecEnd</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Hit <code>⌘ + U</code> and you should be green.</p>
-
-<h5>Integration tests</h5>
-
-<p>Now, Specta needs no further configurations, but KIF does.
-<a href="https://github.com/kif-framework/KIF">KIF documentation</a> suggest to make sure that the Bundle loader and Test Host are correctly configured, but I always found them already set by XCode to the proper values.
-Since now XCode ships with XCTest, I had to switch back to <code>octest</code> in the Wrapper Extension property, under Build Settings.
-Everything should be ok, let&rsquo;s write a test.
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>UselessTest.h</span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">KIF</span><span class="o">/</span><span class="n">KIF</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@interface</span> <span class="nc">UselessTest</span> : <span class="nc">KIFTestCase</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>UselessTest.m</span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">import</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">UselessTest</span><span class="p">.</span><span class="n">h</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@implementation</span> <span class="nc">UselessTest</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">doSomething</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="p">[</span><span class="n">tester</span> <span class="nl">tapScreenAtPoint:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">}];</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@end</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Again <code>⌘ + U</code> and we are good.</p>
-
-<h3>xctool</h3>
-
-<p><a href="https://github.com/facebook/xctool">xctool</a> is a great way to run your tests outside of xcode, and with much better output than xcodebuild. Using it is quite simple, install it via <a href="http://brew.sh/">homebrew</a>:</p>
-
-<pre><code>brew install xctool
-</code></pre>
-
-<p>then run your test with it:</p>
-
-<pre><code>xctool -workspace Project.xcworkspace -scheme Project -sdk iphonesimulator test
-</code></pre>
-
-<p>That&rsquo;s it.
-Until next time.</p>
-
-<p>Cheers</p>
-
-<p>Andrea</p>
 ]]></content>
   </entry>
   

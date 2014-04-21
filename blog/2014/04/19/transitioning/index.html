@@ -1,0 +1,565 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Transitioning - Syntax Error</title>
+  <meta name="author" content="Andrea Mazzini">
+
+  
+  <meta name="description" content="I like to kick the morning off by visiting a handful of sites that collect cool app designs. One of my favorite is Capptivate. I often find myself &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://andreamazz.github.io/blog/2014/04/19/transitioning/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="" rel="alternate" title="Syntax Error" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Lobster" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-42282237-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <header role="banner"><hgroup>
+  <h1><a href="/">Syntax Error</a></h1>
+  
+    <h2>Random thoughts and snippets</h2>
+  
+</hgroup>
+
+</header>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:andreamazz.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Transitioning</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-19T19:30:00+02:00" pubdate data-updated="true">Apr 19<span>th</span>, 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I like to kick the morning off by visiting a handful of sites that collect cool app designs. One of my favorite is <a href="http://capptivate.co">Capptivate</a>. I often find myself browsing the site thinking &ldquo;I want one of that.&rdquo;. It&rsquo;s even better if the design triggers another question in my mind: &ldquo;How did they do that?!&rdquo;.<br/>
+I had one of these moments last week, looking at the push transition in <a href="http://capptivate.co/2014/02/04/paper/">Facebook&rsquo;s Paper</a> app. It was a good chance to take a stab at iOS7 custom transitions.</p>
+
+<!-- More -->
+
+
+<h3>Learning custom transitions</h3>
+
+<p>I won&rsquo;t be covering in depth the custom transition APIs in this post, just what I needed to learn to reproduce the aforementioned effect. The main reason is because there are already good sources that cover this matter, I learned a lot from NSScreencast&rsquo;s <a href="http://nsscreencast.com/episodes/86-ios-7-view-controller-transitions">&ldquo;iOS7 View controller Transitions&rdquo;</a> (the subscription fee is well worth all the quality content) and objc.io&rsquo;s <a href="http://www.objc.io/issue-5/view-controller-transitions.html">&ldquo;View controller transitions&rdquo;</a>. The former covers modal transitions, while the later coverage of push transitions was really helpful.</p>
+
+<h3>UINavigationController&rsquo;s delegate</h3>
+
+<p>iOS7 introduces a new set of delegate methods in UINavigationController&rsquo;s protocol:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="err">–</span> <span class="nl">navigationController:animationControllerForOperation:fromViewController:toViewController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationController:interactionControllerForAnimationController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerPreferredInterfaceOrientationForPresentation:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerSupportedInterfaceOrientations:</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The first one is the most interesting of the bunch, it&rsquo;s called when the navigation controller is ready to animate to a new state (or for better terms, when it&rsquo;s ready to perform a new <code>UINavigationControllerOperation</code>) and expects in return a new object that conforms to the <code>UIViewControllerAnimatedTransitioning</code> protocol. It also has a reference to the view controller that we are transitioning from and a reference to the controller that we are transitioning to:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">id</span><span class="o">&lt;</span><span class="n">UIViewControllerAnimatedTransitioning</span><span class="o">&gt;</span><span class="p">)</span>
+</span><span class='line'>                   <span class="nf">navigationController:</span><span class="p">(</span><span class="n">UINavigationController</span> <span class="o">*</span><span class="p">)</span><span class="nv">navigationController</span>
+</span><span class='line'>        <span class="nf">animationControllerForOperation:</span><span class="p">(</span><span class="n">UINavigationControllerOperation</span><span class="p">)</span><span class="nv">operation</span>
+</span><span class='line'>                     <span class="nf">fromViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="nv">fromVC</span>
+</span><span class='line'>                       <span class="nf">toViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="nv">toVC</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>UIViewControllerAnimatedTransitioning</h3>
+
+<p>Cool, we get notified when the navigation controller is ready to make its magic. Let&rsquo;s take a look at what kind of object it expects from us, by inspecting <code>UIViewControllerAnimatedTransitioning</code> protocol:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@protocol</span> <span class="nc">UIViewControllerAnimatedTransitioning</span> <span class="o">&lt;</span><span class="n">NSObject</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="n">NSTimeInterval</span><span class="p">)</span><span class="nl">transitionDuration:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="n">transitionContext</span><span class="p">;</span>
+</span><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">animateTransition:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="nv">transitionContext</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@optional</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">animationEnded:</span><span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="n">transitionCompleted</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Easy enough&hellip; one call for the animation&rsquo;s duration and one call to perform said animation.<br/>
+Before diving into the code we might want to lay out our animation graphically. Let&rsquo;s fire up Sketch and draw something:</p>
+
+<p><img class="center" src="/images/posts/2014-04-19/sketch.png" title="'Sketch'" ></p>
+
+<p>Ok, so we have two view controllers, they both have table views, and we want to present the new cells with a slight delay each, while kicking the old cells to the other side, with the same delay.<br/>
+Let&rsquo;s break it down.</p>
+
+<p><em>From</em> ViewController:</p>
+
+<ul>
+<li>Get the visible cells in the table view</li>
+<li>Move each cell to the left by the screen width</li>
+<li>Fade out each cell</li>
+<li>On completion set the cells back to their position (we&rsquo;ll need them on <em>pop</em>)</li>
+</ul>
+
+
+<p><em>To</em> ViewController:</p>
+
+<ul>
+<li>Set the controller&rsquo;s frame to match the starting controller</li>
+<li>Move the controller&rsquo;s frame to the side</li>
+<li>Get the visible cells in the table view</li>
+<li>Push the cells to the right <em>with no animation</em></li>
+<li>Move each cell to the left</li>
+</ul>
+
+
+<p>That looks pretty simple, but there are couple of caveats.<br/>
+The first thing that I noticed is that the new cells are not available at first. The second issue was that if I moved the destination frame to match the source one right away, the source cells would disappear instantly.<br/>
+To solve these issues I had to use a little trick: use a <code>0</code> duration animation where I move the frame of the destination controller to the point <code>(1,0)</code>. This allows the destination controller to load its cells, and the source controller will still be visible.</p>
+
+<p>To sum it up (I&rsquo;ll include only the <em>push</em> code):</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Move the destination in place</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">source</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// And kick it aside</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// First step is required to trigger the load of the visible cells.</span>
+</span><span class='line'><span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="mi">0</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="nb">nil</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Plain animation that moves the destination controller in place. Once it&#39;s done it will notify the transition context</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>                    <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="o">^</span><span class="p">{</span>
+</span><span class='line'>                            <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>                    <span class="p">}</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                            <span class="p">[</span><span class="n">transitionContext</span> <span class="nl">completeTransition:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'>                    <span class="p">}];</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Animates the cells of the starting view controller</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">([</span><span class="n">fromVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>            <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="o">-</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>            <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">completion</span><span class="p">)(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">){</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="n">completion</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">}];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">([</span><span class="n">toVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">toVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>            <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">}];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This will get the cell animating back and forth, but the effect is far from impressive, we need some further tinkering.</p>
+
+<h3>Setting up the view controller</h3>
+
+<p>If you take a look at Paper, the cells move back and forth on the same background image, you can&rsquo;t see a clear cut from a view controller to the other. That&rsquo;s easy to achieve, we just need to configure our navigation controller like this:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="nl">colorWithPatternImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="s">@&quot;background&quot;</span><span class="p">]]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setBackgroundImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="s">@&quot;navbar&quot;</span><span class="p">]</span> <span class="nl">forBarMetrics:</span><span class="n">UIBarMetricsDefault</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">tableView</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setTintColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">whiteColor</span><span class="p">]];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And our cells need to be transparent too:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span><span class="o">*</span><span class="p">)</span><span class="nf">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// ... </span>
+</span><span class='line'>    <span class="p">[</span><span class="n">cell</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">cell</span> <span class="nl">setSelectionStyle:</span><span class="n">UITableViewCellSelectionStyleNone</span><span class="p">];</span>
+</span><span class='line'>    <span class="c1">// ...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we can take the new animator for a spin, by returning it in the <code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code> method.</p>
+
+<p>Here&rsquo;s the result:
+<img class="center" src="/images/posts/2014-04-19/screenshot.gif" title="'Result'" >
+It&rsquo;s not perfect, but it can be easily tweaked.</p>
+
+<h3>The code</h3>
+
+<p>I released all the code described above as a pod. It includes both the push and pop operations, and its fairly customizable.<br/>
+You can find the source <a href="https://github.com/andreamazz/AMWaveTransition">here</a>.</p>
+
+<p>Until next time.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Andrea Mazzini</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-19T19:30:00+02:00" pubdate data-updated="true">Apr 19<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/objc/'>objc</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://andreamazz.github.io/blog/2014/04/19/transitioning/" data-via="theandreamazz" data-counturl="http://andreamazz.github.io/blog/2014/04/19/transitioning/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/10/hey-ios/" title="Previous Post: Hey iOS, I like you, we should be friends">&laquo; Hey iOS, I like you, we should be friends</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/04/19/transitioning/">Transitioning</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/10/hey-ios/">Hey iOS, I like you, we should be friends</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod/">AMScrollingNavbar: creating a cocoapod</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/25/configuring-alljoyn-on-ios/">Configuring Alljoyn on iOS</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/10/network-stubs-with-ohhttpstubs/">Network Stubs with OHHTTPStubs</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/andreamazz">@andreamazz</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'andreamazz',
+            count: 5,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Twitter</h1>
+  
+    <a href="http://twitter.com/theandreamazz" class="twitter-follow-button" data-show-count="">Follow @theandreamazz</a>
+  
+</section>
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/+AndreaMazzini?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Andrea Mazzini -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'uicode';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://andreamazz.github.io/blog/2014/04/19/transitioning/';
+        var disqus_url = 'http://andreamazz.github.io/blog/2014/04/19/transitioning/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+  </div>
+</body>
+</html>
