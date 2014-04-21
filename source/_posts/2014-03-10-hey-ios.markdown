@@ -32,7 +32,8 @@ Lesson learned. From now on I'll be using [FXBlurView](https://github.com/nicklo
 They are. It's even worse when you open up a photo, you pinch, you tap away to dismiss it... been there, done that. [URBMediaFocusViewController](https://github.com/u10int/URBMediaFocusViewController) adds a little UIDynamics flavor to the mix, blurs the background and adds some parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It's a brilliant piece of software, really.
 
 ####Liftoff
-[Liftoff](https://github.com/thoughtbot/liftoff) is a cool little _opinionated_ tool from the [Thoughtbot](http://thoughtbot.com/) guys. In a couple of quick steps you can setup an Xcode project to use:
+[Liftoff](https://github.com/thoughtbot/liftoff) is a cool little _opinionated_ tool from the [Thoughtbot](http://thoughtbot.com/) guys. In a couple of quick steps you can setup an Xcode project to use:  
+
 - 4 spaces indentation level
 - warning treated as errors
 - Static Analysis
