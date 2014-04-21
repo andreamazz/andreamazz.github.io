@@ -310,11 +310,15 @@ To solve these issues I had to use a little trick: use a <code>0</code> duration
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now we can take the new animator for a spin, by returning it in the <code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code> method.</p>
+<p>Now we can take the new animator for a spin, by returning it in the delegate method:</p>
 
-<p>Here&rsquo;s the result:
-<img class="center" src="/images/posts/2014-04-19/screenshot.gif" title="'Result'" >
-It&rsquo;s not perfect, but it can be easily tweaked.</p>
+<p><code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code></p>
+
+<p>Here&rsquo;s the result:</p>
+
+<p><img class="center" src="/images/posts/2014-04-19/screenshot.gif" title="'Result'" ></p>
+
+<p>It&rsquo;s not perfect, but it can be easily tweaked.</p>
 
 <h3>The code</h3>
 

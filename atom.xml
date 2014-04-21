@@ -4,7 +4,7 @@
   <title><![CDATA[Syntax Error]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-04-21T16:25:56+02:00</updated>
+  <updated>2014-04-21T16:33:09+02:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -249,11 +249,15 @@ To solve these issues I had to use a little trick: use a <code>0</code> duration
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Now we can take the new animator for a spin, by returning it in the <code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code> method.</p>
+<p>Now we can take the new animator for a spin, by returning it in the delegate method:</p>
 
-<p>Here&rsquo;s the result:
-<img class="center" src="http://andreamazz.github.io/images/posts/2014-04-19/screenshot.gif" title="'Result'" >
-It&rsquo;s not perfect, but it can be easily tweaked.</p>
+<p><code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code></p>
+
+<p>Here&rsquo;s the result:</p>
+
+<p><img class="center" src="http://andreamazz.github.io/images/posts/2014-04-19/screenshot.gif" title="'Result'" ></p>
+
+<p>It&rsquo;s not perfect, but it can be easily tweaked.</p>
 
 <h3>The code</h3>
 
@@ -305,12 +309,16 @@ Lesson learned. From now on I&rsquo;ll be using <a href="https://github.com/nick
 
 <h4>Liftoff</h4>
 
-<p><a href="https://github.com/thoughtbot/liftoff">Liftoff</a> is a cool little <em>opinionated</em> tool from the <a href="http://thoughtbot.com/">Thoughtbot</a> guys. In a couple of quick steps you can setup an Xcode project to use:
-&ndash; 4 spaces indentation level
-&ndash; warning treated as errors
-&ndash; Static Analysis
-&ndash; TODO and FIXME treated as warnings
-&ndash; a precompiled .gitignore and .gitattributes.</p>
+<p><a href="https://github.com/thoughtbot/liftoff">Liftoff</a> is a cool little <em>opinionated</em> tool from the <a href="http://thoughtbot.com/">Thoughtbot</a> guys. In a couple of quick steps you can setup an Xcode project to use:</p>
+
+<ul>
+<li>4 spaces indentation level</li>
+<li>warning treated as errors</li>
+<li>Static Analysis</li>
+<li>TODO and FIXME treated as warnings</li>
+<li>a precompiled .gitignore and .gitattributes.</li>
+</ul>
+
 
 <p>It also can be used to create a brand new project, reducing the time spent reorganizing stuff to match the common (sense) conventions.<br/>
 Using it is easy as pie:</p>
