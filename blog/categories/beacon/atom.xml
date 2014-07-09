@@ -4,7 +4,7 @@
   <title><![CDATA[Category: beacon | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/beacon/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-07-01T22:09:53+02:00</updated>
+  <updated>2014-07-09T20:00:00+02:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -24,7 +24,7 @@ This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in
 <!-- More -->
 
 
-<p>I already tried my hand with iBeacons in the not so distant past. Using <a href="https://github.com/lgaches/BeaconEmitter">BeaconEmitter</a> you can easily turn your Mac in a beacon, with no extra hardware required. When I experimented with iBeacons I had a couple of ideas on my mind, that involved being able to send a local notification to the user that enters in range of a device acting as a beacon. My dreams were crushed by the limits of the iOS 7.0 implementation, as I found out that:</p>
+<p>I already tried my hand with iBeacons in the not so distant past. Using <a href="https://github.com/lgaches/BeaconEmitter">BeaconEmitter</a> you can easily turn your Mac into a beacon, with no extra hardware required. When I experimented with iBeacons I had a couple of ideas on my mind, that involved being able to send a local notification to the user that enters in range of a device acting as a beacon. My dreams were crushed by the limits of the iOS 7.0 implementation, as I found out that:</p>
 
 <ul>
 <li>you can&rsquo;t react when the user&rsquo;s screen is turned off</li>
@@ -33,7 +33,7 @@ This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in
 </ul>
 
 
-<p>The most exciting thing about playing around with the Estimote SDK, besides the nifty packaging and well designed piece of hardware, is that now my devices now have iOS 7.1. It turns out that with version 7.1, iOS is way more flexible and it&rsquo;s taking care of all the problems I faced with 7.0:</p>
+<p>The most exciting thing about playing around with the Estimote SDK, besides the nifty packaging and well designed piece of hardware, is that my devices now have iOS 7.1. It turns out that with version 7.1, iOS is way more flexible and it&rsquo;s taking care of all the problems I faced with 7.0:</p>
 
 <ul>
 <li>you can show a local notification when the screen is off</li>
@@ -126,7 +126,7 @@ That&rsquo;s a pretty basic model, taking advantage of Rails 4.1 enums.</p>
 
 <h3>iOS Client</h3>
 
-<p>The iOS app needs to look for our trusty beacon, and once the user is in range of our region, it need to make a POST call to our API. When the user walks out of the office the phone needs to do the same to the checkout API. The iOS APIs for handling beacons are inside CoreLocation, in this sample I&rsquo;ll be using two main delegate methods:
+<p>The iOS app needs to look for our trusty beacon, and once the user is in range of our region, it needs to make a POST call to our API. When the user walks out of the office the phone needs to do the same to the checkout API. The iOS APIs for handling beacons are inside CoreLocation, in this sample I&rsquo;ll be using two main delegate methods:
 <div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">locationManager:</span><span class="p">(</span><span class="n">CLLocationManager</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">manager</span> <span class="nl">didEnterRegion:</span><span class="p">(</span><span class="n">CLRegion</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">region</span><span class="p">;</span>
