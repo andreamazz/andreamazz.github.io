@@ -8,13 +8,13 @@ categories: ios beacon rails
 You probably know already what [iBeacon](https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html) is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by 'the Apple way of' I mean 'it just works and shows a lot of potential'. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. "Oook, what do I do with it?". The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it's fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let's say around a 50 meters radius). I should also mention that it works fine with Android too.
 This week an [Estimote](http://estimote.com) developer kit arrived in the Fancy Pixel's offices, so we took the chance to play around with it. 
 <!-- More -->
-I already tried my hand with iBeacons in the not so distant past. Using [BeaconEmitter](https://github.com/lgaches/BeaconEmitter) you can easily turn your Mac in a beacon, with no extra hardware required. When I experimented with iBeacons I had a couple of ideas on my mind, that involved being able to send a local notification to the user that enters in range of a device acting as a beacon. My dreams were crushed by the limits of the iOS 7.0 implementation, as I found out that: 
+I already tried my hand with iBeacons in the not so distant past. Using [BeaconEmitter](https://github.com/lgaches/BeaconEmitter) you can easily turn your Mac into a beacon, with no extra hardware required. When I experimented with iBeacons I had a couple of ideas on my mind, that involved being able to send a local notification to the user that enters in range of a device acting as a beacon. My dreams were crushed by the limits of the iOS 7.0 implementation, as I found out that: 
 
 - you can't react when the user's screen is turned off 
 - you can't perform any action when your app is in background, even if you request the `location` background state
 - detecting when the user leaves a region takes quite a lot of time (at least 10/15 minutes)
 
-The most exciting thing about playing around with the Estimote SDK, besides the nifty packaging and well designed piece of hardware, is that now my devices now have iOS 7.1. It turns out that with version 7.1, iOS is way more flexible and it's taking care of all the problems I faced with 7.0:
+The most exciting thing about playing around with the Estimote SDK, besides the nifty packaging and well designed piece of hardware, is that my devices now have iOS 7.1. It turns out that with version 7.1, iOS is way more flexible and it's taking care of all the problems I faced with 7.0:
 
 - you can show a local notification when the screen is off
 - you can perform operations when the user enters a region (even if the app was killed)
