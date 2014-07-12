@@ -4,7 +4,7 @@
   <title><![CDATA[Syntax Error]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2014-07-09T20:00:00+02:00</updated>
+  <updated>2014-07-12T12:03:54+02:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -18,7 +18,7 @@
     <link href="http://andreamazz.github.io/blog/2014/07/01/fun-with-ibeacon/"/>
     <updated>2014-07-01T20:47:00+02:00</updated>
     <id>http://andreamazz.github.io/blog/2014/07/01/fun-with-ibeacon</id>
-    <content type="html"><![CDATA[<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too.
+    <content type="html"><![CDATA[<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too. (<em>Update: look at the end of the post for the sources of the Android version</em>)
 This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in the Fancy Pixel&rsquo;s offices, so we took the chance to play around with it.</p>
 
 <!-- More -->
@@ -256,6 +256,10 @@ Now that all that is out of the way, let&rsquo;s get to the code:</p>
 <p><img class="center" src="http://andreamazz.github.io/images/posts/2014-07-01/rails.png" title="'Who's Fancy Rails'" ></p>
 
 <p>You can find the rails and iOS code <a href="https://github.com/FancyPixel/whosfancy-rails">here</a> and <a href="https://github.com/FancyPixel/whosfancy-ios">here</a>.</p>
+
+<h4>Android version</h4>
+
+<p>Updated: We also pushed the Android version on our Github page, you can find it <a href="https://github.com/FancyPixel/whosfancy-android">here</a>.</p>
 
 <p>Until next time.</p>
 
