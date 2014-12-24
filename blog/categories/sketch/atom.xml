@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: sketch | Syntax Error]]></title>
+  <link href="http://andreamazz.github.io/blog/categories/sketch/atom.xml" rel="self"/>
+  <link href="http://andreamazz.github.io/"/>
+  <updated>2014-12-24T15:54:26+01:00</updated>
+  <id>http://andreamazz.github.io/</id>
+  <author>
+    <name><![CDATA[Andrea Mazzini]]></name>
+    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[New Year's Resolution: design an icon a day]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/12/16/new-years-resolution/"/>
+    <updated>2014-12-16T14:42:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/12/16/new-years-resolution</id>
+    <content type="html"><![CDATA[<p><em>&ldquo;This year is the year. The year when I actually take my new year&rsquo;s resolution to its completion&rdquo;</em>. That&rsquo;s what I tell myself every year. Last year I started a new resolution: post an article a month on this blog. Well&hellip; that went great as you can see, although it was a nice experience being on the first page of <a href="https://news.ycombinator.com/item?id=8010233">Hacker News</a> for a brief period. <!-- More -->
+I did try my best, but sometimes life hits you like a ton of bricks. Feeling swarmed I opted to dedicate my spare time to my open source projects on <a href="https://github.com/andreamazz">Github</a>, leaving this blog rather sad and empty.<br/>
+Anyway, since I&rsquo;m a creature of habit, I am here telling myself <em>&ldquo;This year is the year. the year when I actually take my new year&rsquo;s resolution to its completion&rdquo;</em>. Since I&rsquo;m an idiot I&rsquo;m about to pick a challenge worth 365 daily efforts instead of 12 monthly ones.
+Before illustrating this year&rsquo;s challenge, I&rsquo;ll take a step back to explain my reasoning behind this. If you happened to read one of my previous post you might know that I&rsquo;m an iOS developer at heart, and sometimes I take a stab at UI design and Rails development. I feel like my iOS tools are moderately sharp (although I need to catch up on WatchKit and start taking Swift more seriously, i.e.: start using it for production code), unlike my designer&rsquo;s skills, that definitely needs some polish. That&rsquo;s why this year&rsquo;s resolution will be covered by my favorite design tool, <a href="http://bohemiancoding.com/sketch/">Sketch</a>.</p>
+
+<h2>Designing an icon a day</h2>
+
+<p>The other day I stumbled upon <a href="http://sensibleworld.com/news/year-of-icons/">this project</a>. A really simple idea (to describe): design an icon a day. I love this concept, for one I&rsquo;ll be able to practice designing vector shapes, and as icing on this slowly baked cake I&rsquo;ll end up with a bunch of (hopefully) reusable icons.
+I was intrigued, so intrigued that I think this will be the perfect year-long project.
+I can already hear future-me screaming in pain, calling me an idiot. Brilliant.</p>
+
+<h2>How and where</h2>
+
+<p>I&rsquo;ll be using Sketch, and my main source of inspiration will be, at first, random words from a word generator.
+I&rsquo;ll be posting the icons on my Github&rsquo;s profile, in <a href="https://github.com/andreamazz/one-icon-a-day">this repository</a>. The icons will be licensed under Creative Commons&rsquo;s Attribution 4.0 International licence.
+The fun starts on January 1 2015. Future-me will hopefully stop this project on December 31 2015 maintaining a sizeable amount of sanity.</p>
+
+<p>Untile next time.</p>
+
+<p>I&rsquo;m so going to botch this&hellip;</p>
+]]></content>
+  </entry>
+  
+</feed>

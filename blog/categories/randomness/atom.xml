@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: randomness | Syntax Error]]></title>
+  <link href="http://andreamazz.github.io/blog/categories/randomness/atom.xml" rel="self"/>
+  <link href="http://andreamazz.github.io/"/>
+  <updated>2014-12-24T15:54:26+01:00</updated>
+  <id>http://andreamazz.github.io/</id>
+  <author>
+    <name><![CDATA[Andrea Mazzini]]></name>
+    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Open for business]]></title>
+    <link href="http://andreamazz.github.io/blog/2013/11/10/open-for-business/"/>
+    <updated>2013-11-10T18:55:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2013/11/10/open-for-business</id>
+    <content type="html"><![CDATA[<p>Hi everyone. This blog is nothing more than a random collection of thoughts and snippets that might be usefull to other developers and, most of all, will be usefull to <em>future</em> me.</p>
+
+<!-- more -->
+
+
+<p>I&rsquo;m a software engineer, I work most of my time with Objective-C, but I also like to mix stuff up with Ruby and occasionally Android.  I&rsquo;m a co-founder of <a href="http://www.fancypixel.it">Fancy Pixel</a> where I work as developer and UI designer. You can find all my opensource projects on <a href="http://www.github.com/andreamazz">Github</a>.</p>
+
+<p>Cheers,
+Andrea.</p>
+]]></content>
+  </entry>
+  
+</feed>

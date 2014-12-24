@@ -1,0 +1,1175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: ios | Syntax Error]]></title>
+  <link href="http://andreamazz.github.io/blog/categories/ios/atom.xml" rel="self"/>
+  <link href="http://andreamazz.github.io/"/>
+  <updated>2014-12-24T15:54:26+01:00</updated>
+  <id>http://andreamazz.github.io/</id>
+  <author>
+    <name><![CDATA[Andrea Mazzini]]></name>
+    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Fun with iBeacon]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/07/01/fun-with-ibeacon/"/>
+    <updated>2014-07-01T20:47:00+02:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/07/01/fun-with-ibeacon</id>
+    <content type="html"><![CDATA[<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too. (<em>Update: look at the end of the post for the sources of the Android version</em>)
+This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in the Fancy Pixel&rsquo;s offices, so we took the chance to play around with it.</p>
+
+<!-- More -->
+
+
+<p>I already tried my hand with iBeacons in the not so distant past. Using <a href="https://github.com/lgaches/BeaconEmitter">BeaconEmitter</a> you can easily turn your Mac into a beacon, with no extra hardware required. When I experimented with iBeacons I had a couple of ideas on my mind, that involved being able to send a local notification to the user that enters in range of a device acting as a beacon. My dreams were crushed by the limits of the iOS 7.0 implementation, as I found out that:</p>
+
+<ul>
+<li>you can&rsquo;t react when the user&rsquo;s screen is turned off</li>
+<li>you can&rsquo;t perform any action when your app is in background, even if you request the <code>location</code> background state</li>
+<li>detecting when the user leaves a region takes quite a lot of time (at least 10/15 minutes)</li>
+</ul>
+
+
+<p>The most exciting thing about playing around with the Estimote SDK, besides the nifty packaging and well designed piece of hardware, is that my devices now have iOS 7.1. It turns out that with version 7.1, iOS is way more flexible and it&rsquo;s taking care of all the problems I faced with 7.0:</p>
+
+<ul>
+<li>you can show a local notification when the screen is off</li>
+<li>you can perform operations when the user enters a region (even if the app was killed)</li>
+<li>it takes second to detect when the user is out of range</li>
+</ul>
+
+
+<p>This turns everything around, iBeacons aren&rsquo;t just a gimmick now, but an exciting tool to experiment with.</p>
+
+<h2>Building a sample</h2>
+
+<p>First thing that came to our mind was to build a simple system to automatically check people in and out of the office. Really, as simple as it gets, it took a couple of hours to build, but it works surprisingly well.</p>
+
+<h3>Rails backend</h3>
+
+<p>To check people in and out we need a backend and an authentication system. Rails makes it easy, a model, a basic API and the help of Devise for the authentication process.
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>app/model/checkin.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Checkin</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Base</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  belongs_to :user&lt;br/</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="n">enum</span> <span class="ss">direction</span><span class="p">:</span> <span class="p">{</span> <span class="k">in</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">out</span><span class="p">:</span> <span class="mi">1</span> <span class="p">}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+That&rsquo;s a pretty basic model, taking advantage of Rails 4.1 enums.</p>
+
+<p>The routes are scoped as APIs, just to be fancy:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>config/routes.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">namespace</span> <span class="ss">:api</span><span class="p">,</span> <span class="ss">defaults</span><span class="p">:</span> <span class="p">{</span><span class="nb">format</span><span class="p">:</span> <span class="ss">:json</span><span class="p">}</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">namespace</span> <span class="ss">:v1</span> <span class="k">do</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;post &#39;checkin&#39;, to: &#39;checkins#checkin&#39;</span>
+</span><span class='line'><span class="sr">post &#39;checkout&#39;, to: &#39;checkins#checkout&#39;</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end</span>
+</span><span class='line'><span class="sr">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And the controller does pretty much just this:
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>checkins_controller.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">checkin</span>
+</span><span class='line'>  <span class="n">checkin</span> <span class="o">=</span> <span class="no">Checkin</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">user</span><span class="p">:</span> <span class="n">current_user</span><span class="p">,</span> <span class="ss">direction</span><span class="p">:</span> <span class="ss">:in</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">checkin</span><span class="o">.</span><span class="n">save</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;head :no_content</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  else&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">render</span> <span class="ss">json</span><span class="p">:</span> <span class="p">{</span><span class="ss">errors</span><span class="p">:</span> <span class="n">checkin</span><span class="o">.</span><span class="n">errors</span><span class="p">},</span> <span class="ss">status</span><span class="p">:</span> <span class="ss">:unprocessable_entity</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The authentication is handled by Devise, and for simplicity we opted for HTTP Basic Authentication.</p>
+
+<h3>iOS Client</h3>
+
+<p>The iOS app needs to look for our trusty beacon, and once the user is in range of our region, it needs to make a POST call to our API. When the user walks out of the office the phone needs to do the same to the checkout API. The iOS APIs for handling beacons are inside CoreLocation, in this sample I&rsquo;ll be using two main delegate methods:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">locationManager:</span><span class="p">(</span><span class="n">CLLocationManager</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">manager</span> <span class="nl">didEnterRegion:</span><span class="p">(</span><span class="n">CLRegion</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">region</span><span class="p">;</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">locationManager:</span><span class="p">(</span><span class="n">CLLocationManager</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">manager</span> <span class="nl">didExitRegion:</span><span class="p">(</span><span class="n">CLRegion</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">region</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The good guy calling these two methods is a <code>CLLocationManager</code> instance. The location manager needs an instance of <code>CLBeaconRegion</code> to start doing its magic though. We can define a region by specifying a UUDID, an identifier, a major and a minor. It might sound confusing at first, but all those things boil down to this:</p>
+
+<ul>
+<li><code>UUDID</code>: A unique identifier of our beacon network. It&rsquo;s best practice to have one UUDID per App. Each beacon will share the same UUDID.</li>
+<li><code>identifier</code>: It&rsquo;s a string representation of our network. It usually is the reverse URI of our App, something along the line of com.something.awesome.</li>
+<li><code>major</code>: It&rsquo;s an integer that specifies the major group of our beacons. Think of it as a common number that can identify a bunch of beacons inside a building.</li>
+<li><code>minor</code>: It&rsquo;s an integer that specifies the single beacon inside of a major group.</li>
+</ul>
+
+
+<p>So our basic config would be one UUDID and identifier per App, one major per building, and one minor per beacon. For the purposes of this sample we only have a beacon, so we can either disregard this info, or just specify whatever major and minor that we want, as long as it matches the ones configured in the beacon itself.
+Now that all that is out of the way, let&rsquo;s get to the code:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="n">CLBeaconRegion</span> <span class="o">*</span><span class="p">)</span><span class="n">region</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span> <span class="p">(</span><span class="n">_region</span> <span class="o">==</span> <span class="nb">nil</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">NSUUID</span> <span class="o">*</span><span class="n">proximityUUID</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSUUID</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithUUIDString:</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="s">@&quot;udid&quot;</span><span class="p">]];</span>
+</span><span class='line'>    <span class="n">_region</span> <span class="o">=</span> <span class="p">[[</span><span class="n">CLBeaconRegion</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithProximityUUID:</span><span class="n">proximityUUID</span>
+</span><span class='line'>                                                      <span class="nl">major:</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="s">@&quot;major&quot;</span><span class="p">]</span> <span class="n">intValue</span><span class="p">]</span>
+</span><span class='line'>                                                      <span class="nl">minor:</span><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="s">@&quot;minor&quot;</span><span class="p">]</span> <span class="n">intValue</span><span class="p">]</span>
+</span><span class='line'>                                                 <span class="nl">identifier:</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="s">@&quot;identifier&quot;</span><span class="p">]];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">[</span><span class="n">_region</span> <span class="nl">setNotifyOnExit:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">_region</span> <span class="nl">setNotifyOnEntry:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">_region</span> <span class="nl">setNotifyEntryStateOnDisplay:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">return</span> <span class="n">_region</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+There we go, our lazy loaded region that reads the parameters from an NSDictionary. Cool, let&rsquo;s start monitoring:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">manager</span> <span class="nl">startMonitoringForRegion:</span><span class="n">self</span><span class="p">.</span><span class="n">region</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">manager</span> <span class="nl">stopRangingBeaconsInRegion:</span><span class="n">self</span><span class="p">.</span><span class="n">region</span><span class="p">];</span><span class="o">&lt;</span><span class="n">br</span><span class="o">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+The first line is pretty self explanatory, the second one just tells the system that I don&rsquo;t really care for the single beacons, I just need the region updates.</p>
+
+<p>Now that we are monitoring the region, we just need to decide what to do when we are in and out of range:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">locationManager:</span><span class="p">(</span><span class="n">CLLocationManager</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">manager</span> <span class="nl">didEnterRegion:</span><span class="p">(</span><span class="n">CLRegion</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">region</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span> <span class="p">([</span><span class="n">region</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">CLBeaconRegion</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">CLBeaconRegion</span> <span class="o">*</span><span class="n">beaconRegion</span> <span class="o">=</span> <span class="p">(</span><span class="n">CLBeaconRegion</span> <span class="o">*</span><span class="p">)</span><span class="n">region</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">([</span><span class="n">beaconRegion</span><span class="p">.</span><span class="n">identifier</span> <span class="nl">isEqualToString:</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="s">@&quot;identifier&quot;</span><span class="p">]]</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="p">[</span><span class="n">beaconRegion</span><span class="p">.</span><span class="n">major</span> <span class="n">intValue</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="s">@&quot;major&quot;</span><span class="p">]</span> <span class="n">intValue</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="p">[</span><span class="n">beaconRegion</span><span class="p">.</span><span class="n">minor</span> <span class="n">intValue</span><span class="p">]</span><span class="o">==</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="s">@&quot;minor&quot;</span><span class="p">]</span> <span class="n">intValue</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">UILocalNotification</span> <span class="o">*</span><span class="n">notification</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UILocalNotification</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">notification</span><span class="p">.</span><span class="n">userInfo</span> <span class="o">=</span> <span class="err">@</span><span class="p">{</span><span class="s">@&quot;identifier&quot;</span><span class="o">:</span> <span class="n">region</span><span class="p">.</span><span class="n">identifier</span><span class="p">};</span>
+</span><span class='line'>        <span class="n">notification</span><span class="p">.</span><span class="n">alertBody</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;Entering %@&quot;</span><span class="p">,</span> <span class="n">region</span><span class="p">.</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">notification</span><span class="p">.</span><span class="n">soundName</span> <span class="o">=</span> <span class="s">@&quot;Default&quot;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">presentLocalNotificationNow:</span><span class="n">notification</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">self</span> <span class="nl">remoteCheckin:</span><span class="n">FPCheckDirectionIn</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">locationManager:</span><span class="p">(</span><span class="n">CLLocationManager</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">manager</span> <span class="nl">didExitRegion:</span><span class="p">(</span><span class="n">CLRegion</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">region</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">([</span><span class="n">region</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">CLBeaconRegion</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">CLBeaconRegion</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">beaconRegion</span> <span class="o">=</span> <span class="p">(</span><span class="n">CLBeaconRegion</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">region</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">([</span><span class="n">beaconRegion</span><span class="p">.</span><span class="n">identifier</span> <span class="nl">isEqualToString:</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">identifier</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]]</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="p">[</span><span class="n">beaconRegion</span><span class="p">.</span><span class="n">major</span> <span class="n">intValue</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">major</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]</span> <span class="n">intValue</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="p">[</span><span class="n">beaconRegion</span><span class="p">.</span><span class="n">minor</span> <span class="n">intValue</span><span class="p">]</span><span class="o">==</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">settings</span><span class="p">[</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">minor</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]</span> <span class="n">intValue</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>          <span class="n">UILocalNotification</span> <span class="o">*</span><span class="n">notification</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UILocalNotification</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>          <span class="n">notification</span><span class="p">.</span><span class="n">userInfo</span> <span class="o">=</span> <span class="err">@</span><span class="p">{</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">identifier</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span><span class="o">:</span> <span class="n">region</span><span class="p">.</span><span class="n">identifier</span><span class="p">};</span>
+</span><span class='line'>          <span class="n">notification</span><span class="p">.</span><span class="n">alertBody</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Exiting</span> <span class="o">%</span><span class="err">@</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="n">region</span><span class="p">.</span><span class="n">identifier</span><span class="p">];</span>
+</span><span class='line'>          <span class="n">notification</span><span class="p">.</span><span class="n">soundName</span> <span class="o">=</span> <span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Default</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;;</span>
+</span><span class='line'>          <span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">presentLocalNotificationNow:</span><span class="n">notification</span><span class="p">];</span>
+</span><span class='line'>          <span class="p">[</span><span class="n">self</span> <span class="nl">remoteCheckin:</span><span class="n">FPCheckDirectionOut</span><span class="p">];</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></li>
+</ul>
+
+
+<p>As you can see, we&rsquo;re just checking against our beacon, when we are in range or when we get out of range, we push a local notification and we perform a remote call to our Rails backend. You can find the full source on our Github account, don&rsquo;t worry.</p>
+
+<h2>Who&rsquo;s Fancy?</h2>
+
+<p>And there we go, the iOS app:</p>
+
+<p><img class="center" src="/images/posts/2014-07-01/iOS.png" title="&lsquo;Who&rsquo;s Fancy iOS&rsquo;" ></p>
+
+<p>and the web page:</p>
+
+<p><img class="center" src="/images/posts/2014-07-01/rails.png" title="&lsquo;Who&rsquo;s Fancy Rails&rsquo;" ></p>
+
+<p>You can find the rails and iOS code <a href="https://github.com/FancyPixel/whosfancy-rails">here</a> and <a href="https://github.com/FancyPixel/whosfancy-ios">here</a>.</p>
+
+<h4>Android version</h4>
+
+<p>Updated: We also pushed the Android version on our Github page, you can find it <a href="https://github.com/FancyPixel/whosfancy-android">here</a>.</p>
+
+<p>Until next time.</p>
+
+<p>Andrea</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[UIKit Dynamics]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/05/22/uikit-dynamics/"/>
+    <updated>2014-05-22T19:19:00+02:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/05/22/uikit-dynamics</id>
+    <content type="html"><![CDATA[<p>I&rsquo;m late to the party with this, but I finally had a chance to play around with UIKit Dynamics. I like what I see, I really like it&hellip; I&rsquo;ll spend the rest of my days implementing physics based UI elements&hellip; UIImageView slingshots, UISwitch trabuchets, UISlider catapults&hellip; you name it. Jokes aside, a Github user pointed out in the issue section of <a href="https://github.com/andreamazz/AMWaveTransition">AMWaveTransition</a> that Facebook Paper&rsquo;s <em>wavy</em> transition also implements the interactive pop gesture. &ldquo;Pffftt&hellip; easy&rdquo; I thought. I was wrong. This is how I found out about my new favorite framework.</p>
+
+<!-- More -->
+
+
+<h3>UIPercentDrivenInteractiveTransition</h3>
+
+<p>I started doing some research on custom interactive transitions, and I stumbled upon <code>UIPercentDrivenInteractiveTransition</code>. The logic behind it is really clever, the developer just needs to provide a custom animation and use a UIPanGestureRecognizer to keep track of the completion percentage, and notify the system with such value. UIKit does its magic and the animation is performed in small steps.
+That sounds easy enough, but AMWaveTransition uses a couple of hacky ways to achieve its effect, and it&rsquo;s not based on a single animation block, but in different (and nested) animations.
+I was not surprised when I found out that my percent driven transition didn&rsquo;t work. At all.<br/>
+Besides that, if you look closely to the Paper&rsquo;s implementation, you can see that the cells react to the finger&rsquo;s Y coordinate, not just the X. This means that the cell below the finger is the one &lsquo;leading the charge&rsquo;, the other cells lag behind it. That smells a lot like a custom transition, not a percent driven one.</p>
+
+<h3>UIScreenEdgePanGestureRecognizer</h3>
+
+<p>&ldquo;Ok, no UIKit magic for me this time, I&rsquo;ll just write the animations from scratch.&rdquo;. A <code>UIScreenEdgePanGestureRecognizer</code> and some UIView&rsquo;s animations sounded like the right tools. I just had to figure out what cell to move first, and let the other lag behind, taking account of the swipe velocity. The gestures' tools make that easy enough, you can get the state and velocity of the finger, and apply different animations with different durations and/or delays. Running an animation for each time that the swipe gesture changes isn&rsquo;t a good idea though. A lot of animations get queued up, and even whith the option <code>UIViewAnimationOptionBeginFromCurrentState</code> the resulting effect just isn&rsquo;t right. Also, managing the possibility that the user might swipe back and forth before completing or cancelling increases the complexity.</p>
+
+<p>I didn&rsquo;t want that.</p>
+
+<h3>Dynamics!</h3>
+
+<p>UIKit Dynamics, introduced with iOS7, is a physics engine that lets you apply physics traits to UIKit elements. Its implementation is brilliantly simple, there&rsquo;s an Animator object that handles the various behaviors associated to an interface object. The animator is attached to a reference view (basically the container of all the other views) and handles all the animations, defined by some predefined behaviors (and you can define your own):</p>
+
+<ul>
+<li>UIGravityBehavior</li>
+<li>UICollisionBehavior</li>
+<li>UIAttachmentBehavior</li>
+<li>UISnapBehavior</li>
+<li>UIPushBehavior</li>
+</ul>
+
+
+<p>Each behavior is configurable, and can be combined with the others.</p>
+
+<h4>UIAttachmentBehavior</h4>
+
+<p>From its <a href="https://developer.apple.com/library/ios/documentation/uikit/reference/UIAttachmentBehavior_Class/Reference/Reference.html">class reference</a>: <em>&ldquo;An attachment behavior specifies a dynamic connection between two dynamic items, or between a dynamic item and an anchor point. By default, an item’s attachment point is at its center, but you can change that.&rdquo;</em>. I can change that&hellip; sounds good. I can attach a view to an anchorpoint, and update such point, say to follow the user&rsquo;s swipe. It also features a couple of nifty properties:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// The amount of damping to apply to the attachment behavior.</span>
+</span><span class='line'><span class="k">@property</span><span class="p">(</span><span class="n">readwrite</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">CGFloat</span> <span class="n">damping</span>
+</span><span class='line'><span class="c1">// The frequency of oscillation for the attachment behavior.</span>
+</span><span class='line'><span class="k">@property</span><span class="p">(</span><span class="n">readwrite</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">CGFloat</span> <span class="n">frequency</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+These property will make the attachment springy. Feeling confident.</p>
+
+<h3>Interactive pop</h3>
+
+<p>Performing the interactive pop now should be just a matter of making some calculation, and figure out which view to move and where. I started by adding a <code>UIScreenEdgePanGestureRecognizer</code> to the UINavigationController provided by the user:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">attachInteractiveGestureToNavigationController:</span><span class="p">(</span><span class="n">UINavigationController</span> <span class="o">*</span><span class="p">)</span><span class="n">navigationController</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span> <span class="o">=</span> <span class="n">navigationController</span><span class="p">;</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">gesture</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIScreenEdgePanGestureRecognizer</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithTarget:</span><span class="n">self</span> <span class="nl">action:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">handlePan:</span><span class="p">)];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">gesture</span> <span class="nl">setEdges:</span><span class="n">UIRectEdgeLeft</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span> <span class="nl">addGestureRecognizer:</span><span class="n">self</span><span class="p">.</span><span class="n">gesture</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">animator</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIDynamicAnimator</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithReferenceView:</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span><span class="p">];</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span> <span class="o">=</span> <span class="p">[</span><span class="err">@</span><span class="p">[]</span> <span class="n">mutableCopy</span><span class="p">];</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">attachmentsTo</span> <span class="o">=</span> <span class="p">[</span><span class="err">@</span><span class="p">[]</span> <span class="n">mutableCopy</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+As you can see I also created a <code>UIDynamicAnimator</code>, he&rsquo;s the good guy that&rsquo;ll do all the heavy lifting in a while.</p>
+
+<h4>Handling the gesture</h4>
+
+<p>Once a swipe gesture from the left edge is performed, I need to get a hold of the cells from both the view controllers (the current visible controller, and the one we are swiping back to):</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Starting controller</span>
+</span><span class='line'><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">fromVC</span><span class="p">;</span>
+</span><span class='line'><span class="n">fromVC</span> <span class="o">=</span> <span class="p">(</span><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">topViewController</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Controller that will be visible after the pop</span>
+</span><span class='line'><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">toVC</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">viewControllers</span> <span class="nl">indexOfObject:</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">topViewController</span><span class="p">];</span>
+</span><span class='line'><span class="n">toVC</span> <span class="o">=</span> <span class="p">(</span><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">viewControllers</span><span class="p">[</span><span class="n">index</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>While I&rsquo;m at it I also ask the gesture for the touch position and the swipe horizontal velocity:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="kt">float</span> <span class="n">velocity</span> <span class="o">=</span> <span class="p">[</span><span class="n">gesture</span> <span class="nl">velocityInView:</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span><span class="p">].</span><span class="n">x</span><span class="p">;</span>
+</span><span class='line'><span class="n">CGPoint</span> <span class="n">touch</span> <span class="o">=</span> <span class="p">[</span><span class="n">gesture</span> <span class="nl">locationInView:</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now the fun part. When the gesture starts, I need to figure out which cell is below the touch point, and then wire up a <code>UIAttachmentBehavior</code> to each cell. I&rsquo;ll be storing the behavior in a mutable array, and add it to our trusty animator. The anchor point will be the touch&rsquo;s X coordinate, while the Y coordinate will be the center of the cell (playing around with this coordinate can be fun, it&rsquo;s worth a try).</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIView</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">view</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// The &#39;selected&#39; cell will be the one leading the other cells</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">CGRectContainsPoint</span><span class="p">([</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertRect:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">],</span> <span class="n">touch</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">self</span><span class="p">.</span><span class="n">selectionIndexFrom</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">idx</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">UIAttachmentBehavior</span> <span class="o">*</span><span class="n">attachment</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIAttachmentBehavior</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItem:</span><span class="n">view</span>
+</span><span class='line'>                                                             <span class="nl">attachedToAnchor:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="n">touch</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertPoint:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">].</span><span class="n">y</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">}];</span>
+</span><span class='line'><span class="p">[</span><span class="n">attachment</span> <span class="nl">setDamping:</span><span class="mf">0.4</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">attachment</span> <span class="nl">setFrequency:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">animator</span> <span class="nl">addBehavior:</span><span class="n">attachment</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span> <span class="nl">addObject:</span><span class="n">attachment</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>I need to do this for both <code>fromVC</code> and <code>toVC</code>.</p>
+
+<h4>Moving the cells</h4>
+
+<p>Believe it or not, the hard part is over. Thanks to UIKit Dynamics handling the gesture change is easy as updating the point:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">gesture</span><span class="p">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">UIGestureRecognizerStateChanged</span><span class="p">)</span> <span class="p">{</span>      <span class="o">&lt;</span><span class="n">br</span><span class="o">/&gt;</span>
+</span><span class='line'>  <span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIView</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">view</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>  <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="nl">setAnchorPoint:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="n">touch</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertPoint:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">].</span><span class="n">y</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The code above just moves the cells in the old fashioned way. You might point out that that&rsquo;s not <em>wavy</em> at all. Well&hellip; it&rsquo;s not.
+To make it more interesting we need to play around with the velocity and the distance between cells.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="kt">float</span> <span class="n">delta</span> <span class="o">=</span> <span class="n">touch</span><span class="p">.</span><span class="n">x</span> <span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="n">abs</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">selectionIndexFrom</span> <span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">idx</span><span class="p">)</span> <span class="o">*</span> <span class="n">velocity</span> <span class="o">/</span> <span class="mi">50</span><span class="p">;</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="nl">setAnchorPoint:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="n">delta</span><span class="p">,</span> <span class="p">[</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertPoint:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">].</span><span class="n">y</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+This takes the touch value, subtracts an amount of pixel determined by the distance from the starting cell, multiplied by the velocity (that is toned down by the magic value 50, provided by wisdom. And by wisdom I mean trial and error).
+If you set this up and play around with it a bit you&rsquo;ll notice that it&rsquo;s easy to break stuff. If you swipe too fast, <code>delta</code> becomes huge, and the latch changes direction. Fixing issues like this can be a pain, fortunately the open source community comes to the rescue.</p>
+
+<h4>DynamicXray</h4>
+
+<p><a href="http://dynamicxray.net/">DynamicXray</a> is a tool that provides a graphical runtime representation of the inner workings of a UIKit animator. You just add it to your animator like you would with a behavior, and all your bounds, constraints and forces are represented alongside your views. That&rsquo;s really handy to figure out why a view is acting weird.</p>
+
+<p><img class="center" src="/images/posts/2014-05-22/xray.png" title="&lsquo;Result&rsquo;" ></p>
+
+<p>With the debug wireframe on I was able to see that an excessive swipe caused the latch to change direction, causing the view to follow the touch coordinates from the wrong side of the screen. It&rsquo;s an easy fix, that involves another magic number (2):</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">delta</span> <span class="o">&gt;</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">delta</span> <span class="o">=</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Needles to say, I&rsquo;m not happy with this solution, but for now it would do.</p>
+
+<p>With all this set up, the rest was just maintenance&hellip; I just need to clean everything up when the gesture reaches its end, and call <code>popViewControllerAnimated</code> on the navigation controller.</p>
+
+<p>And there we go:</p>
+
+<p><img class="center" src="/images/posts/2014-05-22/screenshot.gif" title="&lsquo;Result&rsquo;" ></p>
+
+<p>As usual, you can find the code on <a href="https://github.com/andreamazz/AMWaveTransition">Github</a>.</p>
+
+<p>Until next time.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Transitioning]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/04/19/transitioning/"/>
+    <updated>2014-04-19T19:30:00+02:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/04/19/transitioning</id>
+    <content type="html"><![CDATA[<p>I like to kick the morning off by visiting a handful of sites that collect cool app designs. One of my favorite is <a href="http://capptivate.co">Capptivate</a>. I often find myself browsing the site thinking &ldquo;I want one of that.&rdquo;. It&rsquo;s even better if the design triggers another question in my mind: &ldquo;How did they do that?!&rdquo;.<br/>
+I had one of these moments last week, looking at the push transition in <a href="http://capptivate.co/2014/02/04/paper/">Facebook&rsquo;s Paper</a> app. It was a good chance to take a stab at iOS7 custom transitions.</p>
+
+<!-- More -->
+
+
+<h3>Learning custom transitions</h3>
+
+<p>I won&rsquo;t be covering in depth the custom transition APIs in this post, just what I needed to learn to reproduce the aforementioned effect. The main reason is because there are already good sources that cover this matter, I learned a lot from NSScreencast&rsquo;s <a href="http://nsscreencast.com/episodes/86-ios-7-view-controller-transitions">&ldquo;iOS7 View controller Transitions&rdquo;</a> (the subscription fee is well worth all the quality content) and objc.io&rsquo;s <a href="http://www.objc.io/issue-5/view-controller-transitions.html">&ldquo;View controller transitions&rdquo;</a>. The former covers modal transitions, while the later coverage of push transitions was really helpful.</p>
+
+<h3>UINavigationController&rsquo;s delegate</h3>
+
+<p>iOS7 introduces a new set of delegate methods in UINavigationController&rsquo;s protocol:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="err">–</span> <span class="nl">navigationController:animationControllerForOperation:fromViewController:toViewController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationController:interactionControllerForAnimationController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerPreferredInterfaceOrientationForPresentation:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerSupportedInterfaceOrientations:</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The first one is the most interesting of the bunch, it&rsquo;s called when the navigation controller is ready to animate to a new state (or for better terms, when it&rsquo;s ready to perform a new <code>UINavigationControllerOperation</code>) and expects in return a new object that conforms to the <code>UIViewControllerAnimatedTransitioning</code> protocol. It also has a reference to the view controller that we are transitioning from and a reference to the controller that we are transitioning to:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">id</span><span class="o">&lt;</span><span class="n">UIViewControllerAnimatedTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>               <span class="nl">navigationController:</span><span class="p">(</span><span class="n">UINavigationController</span> <span class="o">*</span><span class="p">)</span><span class="n">navigationController</span>
+</span><span class='line'>    <span class="nl">animationControllerForOperation:</span><span class="p">(</span><span class="n">UINavigationControllerOperation</span><span class="p">)</span><span class="n">operation</span>
+</span><span class='line'>                 <span class="nl">fromViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="n">fromVC</span>
+</span><span class='line'>                   <span class="nl">toViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="n">toVC</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>UIViewControllerAnimatedTransitioning</h3>
+
+<p>Cool, we get notified when the navigation controller is ready to make its magic. Let&rsquo;s take a look at what kind of object it expects from us, by inspecting <code>UIViewControllerAnimatedTransitioning</code> protocol:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@protocol</span> <span class="nc">UIViewControllerAnimatedTransitioning</span> <span class="o">&lt;</span><span class="n">NSObject</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="n">NSTimeInterval</span><span class="p">)</span><span class="nl">transitionDuration:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="n">transitionContext</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">animateTransition:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="n">transitionContext</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@optional</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">animationEnded:</span><span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="n">transitionCompleted</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Easy enough&hellip; one call for the animation&rsquo;s duration and one call to perform said animation.<br/>
+Before diving into the code we might want to lay out our animation graphically. Let&rsquo;s fire up Sketch and draw something:</p>
+
+<p><img class="center" src="/images/posts/2014-04-19/sketch.png" title="&lsquo;Sketch&rsquo;" ></p>
+
+<p>Ok, so we have two view controllers, they both have table views, and we want to present the new cells with a slight delay each, while kicking the old cells to the other side, with the same delay.<br/>
+Let&rsquo;s break it down.</p>
+
+<p><em>From</em> ViewController:</p>
+
+<ul>
+<li>Get the visible cells in the table view</li>
+<li>Move each cell to the left by the screen width</li>
+<li>Fade out each cell</li>
+<li>On completion set the cells back to their position (we&rsquo;ll need them on <em>pop</em>)</li>
+</ul>
+
+
+<p><em>To</em> ViewController:</p>
+
+<ul>
+<li>Set the controller&rsquo;s frame to match the starting controller</li>
+<li>Move the controller&rsquo;s frame to the side</li>
+<li>Get the visible cells in the table view</li>
+<li>Push the cells to the right <em>with no animation</em></li>
+<li>Move each cell to the left</li>
+</ul>
+
+
+<p>That looks pretty simple, but there are couple of caveats.<br/>
+The first thing that I noticed is that the new cells are not available at first. The second issue was that if I moved the destination frame to match the source one right away, the source cells would disappear instantly.<br/>
+To solve these issues I had to use a little trick: use a <code>0</code> duration animation where I move the frame of the destination controller to the point <code>(1,0)</code>. This allows the destination controller to load its cells, and the source controller will still be visible.</p>
+
+<p>To sum it up (I&rsquo;ll include only the <em>push</em> code):
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Move the destination in place</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">source</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// And kick it aside</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// First step is required to trigger the load of the visible cells.</span>
+</span><span class='line'><span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="mi">0</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="nb">nil</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// Plain animation that moves the destination controller in place. Once it&#39;s done it will notify the transition context</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="o">^</span><span class="p">{</span>
+</span><span class='line'>                        <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>                <span class="p">}</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="p">[</span><span class="n">transitionContext</span> <span class="nl">completeTransition:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'>                <span class="p">}];</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Animates the cells of the starting view controller</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">fromVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="o">-</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">completion</span><span class="p">)(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">){</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="n">completion</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">toVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">toVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+This will get the cell animating back and forth, but the effect is far from impressive, we need some further tinkering.</p>
+
+<h3>Setting up the view controller</h3>
+
+<p>If you take a look at Paper, the cells move back and forth on the same background image, you can&rsquo;t see a clear cut from a view controller to the other. That&rsquo;s easy to achieve, we just need to configure our navigation controller like this:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="nl">colorWithPatternImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">background</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setBackgroundImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">navbar</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]</span> <span class="nl">forBarMetrics:</span><span class="n">UIBarMetricsDefault</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">tableView</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setTintColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">whiteColor</span><span class="p">]];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And our cells need to be transparent too:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="n">UITableViewCell</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="nl">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">tableView</span> <span class="nl">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="n">indexPath</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// ... </span>
+</span><span class='line'><span class="p">[</span><span class="n">cell</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">cell</span> <span class="nl">setSelectionStyle:</span><span class="n">UITableViewCellSelectionStyleNone</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// ...</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now we can take the new animator for a spin, by returning it in the delegate method:</p>
+
+<p><code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code></p>
+
+<p>Here&rsquo;s the result:</p>
+
+<p><img class="center" src="/images/posts/2014-04-19/screenshot.gif" title="&lsquo;Result&rsquo;" ></p>
+
+<p>It&rsquo;s not perfect, but it can be easily tweaked.</p>
+
+<h3>The code</h3>
+
+<p>I released all the code described above as a pod. It includes both the push and pop operations, and its fairly customizable.<br/>
+You can find the source <a href="https://github.com/andreamazz/AMWaveTransition">here</a>.</p>
+
+<p>Until next time.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hey iOS, I like you, we should be friends]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/03/10/hey-ios/"/>
+    <updated>2014-03-10T19:30:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/03/10/hey-ios</id>
+    <content type="html"><![CDATA[<p>I started this year with a new year&rsquo;s resolution: <em>write at least a blog post per month</em>. Let me check the date of the last post&hellip;. yep, February 1st, oops, my bad. In my defense it&rsquo;s been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (<a href="https://itunes.apple.com/us/app/memento-i-know-this-place/id698153906?l=it&amp;ls=1&amp;mt=8">Memento: I know this place</a>), and also rewrote the <a href="http://memento.fancypixel.it">landing page</a> for it.<br/>
+I had a chance to try out some cool libraries and tools though, so here&rsquo;s my belated post of the month. The title itself is there just to express my appreciation for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling. Love it.</p>
+
+<!-- More -->
+
+
+<h4>Either I&rsquo;m drunk or the parallax effect is too heavy</h4>
+
+<p>Parallax effect is the new gimmick of iOS7, and it&rsquo;s so Apple-y: it&rsquo;s simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.</p>
+
+<h6>NGAParallaxMotion</h6>
+
+<p>That&rsquo;s a pretty straight forward library. You already know all too well the effect, just look at the springboard. <a href="https://github.com/michaeljbishop/NGAParallaxMotion">NGAParallaxMotion</a> makes it easy as pie to implement, just pop the pod in your podfile, and use the parallaxIntensity property. It can be also used by a designer with no coding skill, straight in an XCode storyboard. Kudos to <a href="https://github.com/michaeljbishop">Michael Bishop</a>, I wish I thought of that.</p>
+
+<h6>CSStickyHeaderFlowLayout</h6>
+
+<p>I like the iOS7 Twitter profile section. You scroll down, the profile background explodes and gets blurry. It&rsquo;s purely a cosmetic thing, makes no sense and that&rsquo;s why it&rsquo;s awesome. I like it so much that I decided to implement it in Memento. Enters <a href="https://github.com/jamztang/CSStickyHeaderFlowLayout">CSStickyHeaderFlowLayout</a>.</p>
+
+<p><img class="center" src="/images/posts/2014-03-10/memento.gif" title="&lsquo;CSStickyHeaderFlowLayout&rsquo;" ></p>
+
+<p>I was going to write a couple of lines describing how to implement it, but I see that the author just added a pretty comprehensive readme. So, tip of the hat to you <a href="https://github.com/jamztang">James Tang</a>!</p>
+
+<h4>Blur everything!</h4>
+
+<p>Blur is another big design thing in iOS7. In a recent project I found myself using <a href="https://github.com/andreamazz/REFrostedViewController">REFrostedViewController</a> to present a side menu. For a more concise menu (e.g.: to present a quick options menu) I use <a href="https://github.com/rnystrom/RNFrostedSidebar">RNFrostedSidebar</a>, another impressive piece of software, clean and effective. You&rsquo;ll find a modified version where you can add labels beneath the items on my <a href="https://github.com/andreamazz/RNFrostedSidebar">github page</a>.<br/>
+What about plain views? I happen to use <a href="https://github.com/JagCesar/iOS-blur">JCRBlurView</a> to obtain a fast and effective blur. It&rsquo;s brilliant, it &lsquo;steals&rsquo; the layer from a UIToolBar and makes it its own. I used the same technique in my <a href="https://github.com/andreamazz/AMDraggableBlurView">AMDraggableBlurView</a>.
+Wait&hellip; steal a cocoa layer to use in one of your views&hellip; that smells fishy&hellip; and here&rsquo;s the catch: it&rsquo;s been reported that applications that use such method might get refused.<br/>
+What I found out is that one of the <a href="https://itunes.apple.com/it/app/palmap-pro/id525999547?mt=8">app that I developed for a client</a> got into the store with no hiccups, but once I opened it from an iPad Mini retina I found out that the blurred view was 100% transparent. No blur, no view, just a transparent container.<br/>
+Lesson learned. From now on I&rsquo;ll be using <a href="https://github.com/nicklockwood/FXBlurView">FXBlurView</a>. BTW, if you happen to use the blurred view from <a href="http://canvaspod.io/">Canvas</a> you should know that they use the same method.</p>
+
+<h4>Photo galleries are boring</h4>
+
+<p>They are. It&rsquo;s even worse when you open up a photo, you pinch, you tap away to dismiss it&hellip; been there, done that. <a href="https://github.com/u10int/URBMediaFocusViewController">URBMediaFocusViewController</a> adds a little UIDynamics flavor to the mix, blurs the background and adds some parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It&rsquo;s a brilliant piece of software, really.</p>
+
+<h4>Liftoff</h4>
+
+<p><a href="https://github.com/thoughtbot/liftoff">Liftoff</a> is a cool little <em>opinionated</em> tool from the <a href="http://thoughtbot.com/">Thoughtbot</a> guys. In a couple of quick steps you can setup an Xcode project to use:</p>
+
+<ul>
+<li>4 spaces indentation level</li>
+<li>warning treated as errors</li>
+<li>Static Analysis</li>
+<li>TODO and FIXME treated as warnings</li>
+<li>a precompiled .gitignore and .gitattributes.</li>
+</ul>
+
+
+<p>It also can be used to create a brand new project, reducing the time spent reorganizing stuff to match the common (sense) conventions.<br/>
+Using it is easy as pie:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install liftoff
+</span><span class='line'>liftoff</span></code></pre></td></tr></table></div></figure></notextile></div>
+That&rsquo;s it.</p>
+
+<h4>Take off the boot(strap)s</h4>
+
+<p>That&rsquo;s unrelated to iOS per se, but since I found myself styling the landing page for <a href="http://memento.fancypixel.it">Memento: I know this place</a> I might as well spent a couple of lines on Pure.<br/>
+<a href="http://purecss.io/">Pure</a> is a pure css responsive web framework. It&rsquo;s unbelievably tiny, with a 4.5KB footprint, and also modular (so if you just need the grid system, you can just include that along with the base classes). If you have experience with Bootstrap or Zurb, you&rsquo;ll find yourself at home with their grid system and components. It can give a site a breath of fresh air. Checkout their <a href="http://purecss.io/layouts/">layout samples</a>.</p>
+
+<h4>My stuff</h4>
+
+<p>I try to keep myself busy in the iOS open-source community as well, so I&rsquo;ll sign off with the links of the new pods that I developed in the last two months, hoping that they might come in handy:</p>
+
+<ul>
+<li><a href="https://github.com/andreamazz/UIView-Shake">UIView+Shake</a>: UIView category that adds a shake animation like the password field of the OsX login screen.</li>
+<li><a href="https://github.com/andreamazz/UIView-draggable">UIView+draggable</a>: UIView category that adds dragging capabilities.</li>
+<li><a href="https://github.com/andreamazz/AMTagListView">AMTagListView</a>: UIScrollView subclass that allows to add a list of highly customizable tags.</li>
+<li><a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a>: Scrollable UINavigationBar that follows the scrolling of a UIScrollView, now updated to be integrated as a UIViewController&rsquo;s category.</li>
+</ul>
+
+
+<p>That&rsquo;s all for now.<br/>
+Cheers.
+Andrea</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AMScrollingNavbar: creating a cocoapod]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod/"/>
+    <updated>2014-02-01T12:07:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod</id>
+    <content type="html"><![CDATA[<p>This week <a href="https://twitter.com/mattt">Matt Thompson</a> published an interesting article on NSHipster, about <a href="http://nshipster.com/stewardship/">stewardship</a>, which is basically <em>the duty and ethic of public service</em>. Since I&rsquo;ve been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I&rsquo;m writing a new library for iOS. I&rsquo;ll be describing my work on <a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a> as an example.</p>
+
+<!-- More -->
+
+
+<p><code>AMScrollingNavbar</code> is a simple iOS library that lets you implement a <code>UINavigationBar</code> that scrolls out of the way when the user is scrolling the content of the app. You can observe this behavior in Google Chrome, Instagram or Facebook apps. I wanted to integrate something like that on one of the app I&rsquo;m working on, over at <a href="http://www.fancypixel.it">Fancy Pixel</a>, but couldn&rsquo;t find anything that did the job as I intended. What better motivation to do some OSS?</p>
+
+<h3>Writing the code</h3>
+
+<p>In cases like this, writing the code is more a series of trial and error, so instead of TDD I use a more <em>sample driven</em> approach. This means that I just fire up XCode, create a new project and start fiddling around with the SDK. That&rsquo;s the best part of the job.</p>
+
+<p>Letting the <code>UINavigationBar</code> scroll out of the way was fairly easy, I just needed to add a <code>UIGestureRecognizer</code> to the <code>UIScrollView</code> with the content.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIPanGestureRecognizer</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithTarget:</span><span class="n">self</span> <span class="nl">action:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">handlePan:</span><span class="p">)];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="nl">setMaximumNumberOfTouches:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="nl">setDelegate:</span><span class="n">self</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">addGestureRecognizer:</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>That alone won&rsquo;t do the trick though, we need to override a delegate method of the <code>UIGestureRecognizerDelegate</code> protocol:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nl">gestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">gestureRecognizer</span> <span class="nl">shouldRecognizeSimultaneouslyWithGestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">otherGestureRecognizer</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Returning <code>YES</code> in this method will allow both the scrollview and the gesture recognizer to work at the same time. Cool.
+Now it&rsquo;s time to stretch <code>UINavigationBar</code>&rsquo;s leg. Here&rsquo;s an abstract of the code that does that:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">scrollWithDelta:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="n">delta</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">CGRect</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="o">-</span><span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">delta</span> <span class="o">=</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">MAX</span><span class="p">(</span><span class="o">-</span><span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">,</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">);</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">[</span><span class="n">self</span> <span class="nl">updateSizingWithDelta:</span><span class="n">delta</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+As you can see the <code>UINavigationBar</code> has its own frame, that you can easily modify. Once I got the navigation bar following the scroll view, I needed to enlarge or reduce the scroll views' frame to leverage all the remaining screen estate. Big chunk of code coming up:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">updateSizingWithDelta:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="n">delta</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// At this point the navigation bar is already been placed in the right position, it&#39;ll be the reference point for the other views&#39;sizing</span>
+</span><span class='line'><span class="n">CGRect</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">[</span><span class="n">self</span> <span class="nl">updateNavbarAlpha:</span><span class="n">delta</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Move and expand (or shrink) the superview of the given scrollview</span>
+</span><span class='line'><span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-=</span> <span class="n">delta</span><span class="p">;</span>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">+=</span> <span class="n">delta</span><span class="p">;</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// if the scrolling view is a UIWebView, we need to adjust its scrollview&#39;s frame.</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIWebView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Keeps the view&#39;s scroll position steady until the navbar is gone</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIScrollView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[(</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">setContentOffset:</span><span class="n">CGPointMake</span><span class="p">(((</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">((</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)];</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIWebView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span> <span class="nl">setContentOffset:</span><span class="n">CGPointMake</span><span class="p">(((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Fairly easy to read, kinda tricky to write. The scrollview&rsquo;s height is increased by the scroll&rsquo;s delta, and its origin is shifted up or down of the same amount. With a little reflection I can check wether the scroll view is a normal <code>UIScrollView</code> (and this includes table views) or a <code>UIWebView</code>. The later has its own scroll view, so I need to adjust that instead.<br/>
+With the view sizing complete, the last step was to fade out the navigation items. I used a hacky approach, since I wasn&rsquo;t able to set the alpha channel of every nav item, I figured I could just impose an overlay view with the same <code>barTintColor</code>, and change its alpha back and forth:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">updateNavbarAlpha:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="n">delta</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">CGRect</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Change the alpha channel of every item on the navbr. The overlay will appear, while the other objects will disappear, and vice versa</span>
+</span><span class='line'><span class="kt">float</span> <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">)</span> <span class="o">/</span> <span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span><span class="p">;</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">overlay</span> <span class="nl">setAlpha:</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">leftBarButtonItems</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIBarButtonItem</span><span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">obj</span><span class="p">.</span><span class="n">customView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">rightBarButtonItems</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIBarButtonItem</span><span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">obj</span><span class="p">.</span><span class="n">customView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">titleView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">tintColor</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">tintColor</span> <span class="nl">colorWithAlphaComponent:</span><span class="n">alpha</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+And that did the trick.</p>
+
+<h3>Getting camera ready</h3>
+
+<p>Once the sample runs like I intended, I step in the refactoring phase. In this step I just take all the code and move it in a reusable object. In this case I opted for a <code>UIViewController</code> that can be subclassed by other developers. I valued the possibility of a category, but since I make an extensive use of instance variables, I preferred the first approach (not a fan of the <code>associatedObject</code> trick).<br/>
+The last item on the todo list is the refactoring of the sample project. And we&rsquo;re done.</p>
+
+<h3>Writing the documentation</h3>
+
+<p>An open source project is as good as its documentation is. It helps the first implementation by other devs, and most of all helps them decide wether to use your library or not. In some way it&rsquo;s marketing, without the <em>market</em> part.<br/>
+I like to spend some time to add comments following the <a href="http://nshipster.com/documentation/">Appledoc notation</a>. This will provide a comprehensive quick guide in XCode, and also will generate an Apple-like documentation in the <a href="http://cocoadocs.org/docsets/AMScrollingNavbar/0.5.4/Classes/AMScrollingCollectionViewController.html">Cocoapods pages</a>.
+As you can see the syntax is easy to write and to understand:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Scrolling</span> <span class="n">init</span> <span class="n">method</span>
+</span><span class='line'> <span class="o">*</span>
+</span><span class='line'> <span class="o">*</span> <span class="n">Enables</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">on</span> <span class="n">a</span> <span class="n">generic</span> <span class="n">UIView</span><span class="p">.</span>
+</span><span class='line'> <span class="o">*</span>
+</span><span class='line'> <span class="o">*</span> <span class="err">@</span><span class="n">param</span> <span class="n">scrollableView</span> <span class="n">The</span> <span class="n">UIView</span> <span class="n">where</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">is</span> <span class="n">performed</span><span class="p">.</span>
+</span><span class='line'> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">followScrollView:</span><span class="p">(</span><span class="n">UIView</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">scrollableView</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Then it&rsquo;s time to push all the work on Github, and this calls for a good README file. The README should have a quick description of the library, the setup instructions, the library&rsquo;s documentation or a reference to it, and a screenshot, when possible.</p>
+
+<h4>Screenshot</h4>
+
+<p>Following the principle <em>&ldquo;show, don&rsquo;t tell&rdquo;</em>, screenshots work great, but GIFs are even better. Creating a GIF animation with your sample running is easy as pie, using <a href="http://www.cockos.com/licecap/">LICEcap</a>. Despite its weird name and lowres icon, LICEcap is an invaluable tool, easy to use and extremely versatile, you just fit the portion of the screen that you want to record inside its window, hit record, and you are done.</p>
+
+<p><img class="center" src="/images/posts/2014-02-01/licecap.png" title="&lsquo;LICEcap&rsquo;" ></p>
+
+<p>You might want to resize the output GIF, if you are capturing a big part of the screen, or if you are working on a retina display. <a href="http://www.imagemagick.org/script/index.php">ImageMagick</a> comes to the rescue:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>convert big.gif -coalesce temp.gif
+</span><span class='line'>convert -size 960x640 temp.gif -resize 480x320 small.gif</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>Travis CI</h3>
+
+<p><a href="https://travis-ci.org/">Travis CI</a> is a continuous integration tool, used to build and test projects hosted on Github. Having Travis enabled in an open source project is a great way to make sure that your project <em>compiles</em> fine. This is awesome for your new releases (you know before hand if your last commit broke something) and even better for pull requests, since Travis tells you wether a pull request compiles without errors, directly in the github page of the PR.<br/>
+To start using Travis, head <a href="https://travis-ci.org/">here</a>, login with Github, and enable your project from the list in your dashboard.<br/>
+Enabling Travis with iOS is really easy, it only takes two steps:</p>
+
+<h4>Configure build scheme</h4>
+
+<p>Open your sample project, or the project component that you want to build, and in the Manage Schemes panel, make sure that your project scheme is <code>Shared</code>:
+<img class="center" src="/images/posts/2014-02-01/schemes.png" title="&lsquo;Schemes&rsquo;" ></p>
+
+<h4>Add .travis.yml</h4>
+
+<p>Add a <code>.travis.yml</code> file in your project root. You&rsquo;ll be writing a simple script that will compile your sample project:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>language: objective-c
+</span><span class='line'>install:
+</span><span class='line'>&ndash; cd ScrollingNavbarDemo
+</span><span class='line'>script: xctool -project ScrollingNavbarDemo.xcodeproj -scheme &lsquo;ScrollingNavbarDemo&rsquo; -configuration Release -sdk iphonesimulator7.0 -arch i386 build</span></code></pre></td></tr></table></div></figure></notextile></div>
+The <code>install</code> phase just changes the directory to the one containing the project, then our trusty xctool compiles the project. Doesn&rsquo;t get much easier than that.</p>
+
+<p>Once you pushed the new release, the project will be added to the travis compile queue, and you&rsquo;ll receive an email with the result. You can also see the script running in real time, which is awesome.</p>
+
+<h3>Cocoapods</h3>
+
+<p>There is no need to reiterate that <a href="http://cocoapods.org/">Cocoapods</a> is <em>great</em>. The times when you spent precious time configuring a new library in your project are (<a href="/blog/2014/01/25/configuring-alljoyn-on-ios/">almost</a>) over. Creating a pod is a matter of minutes, and at the same times provides great value for the community.<br/>
+You&rsquo;ll find a pretty extensive guide on the <a href="http://guides.cocoapods.org/making/making-a-cocoapod.html">cocoapods site</a>.
+Here&rsquo;s what my podspec looks like:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="ss">Pod</span><span class="p">:</span><span class="ss">:Spec</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">name</span>         <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">AMScrollingNavbar</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">version</span>      <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">summary</span>      <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">Scrollable</span> <span class="no">UINavigationBar</span> <span class="n">that</span> <span class="n">follows</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">of</span> <span class="n">a</span> <span class="no">UIScrollView</span><span class="o">.</span> <span class="no">Similiar</span> <span class="n">to</span> <span class="no">Chrome</span> <span class="k">for</span> <span class="n">iOS7</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">homepage</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;</span>
+</span><span class='line'><span class="sr">  s.license      = { :type =&gt; &amp;lsquo;MIT&amp;rsquo;, :file =&gt; &amp;lsquo;LICENSE&amp;rsquo; }</span>
+</span><span class='line'><span class="sr">  s.author       = { &amp;ldquo;Andrea Mazzini&amp;rdquo; =&gt; &amp;ldquo;&lt;a href=&quot;&amp;#x6d;&amp;#97;&amp;#105;&amp;#x6c;&amp;#x74;&amp;#111;&amp;#58;&amp;#97;&amp;#110;&amp;#100;&amp;#x72;&amp;#x65;&amp;#97;&amp;#x2e;&amp;#109;&amp;#x61;&amp;#122;&amp;#122;&amp;#105;&amp;#110;&amp;#x69;&amp;#x40;&amp;#x67;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#x2e;&amp;#99;&amp;#111;&amp;#109;&quot;&gt;&amp;#x61;&amp;#x6e;&amp;#100;&amp;#x72;&amp;#101;&amp;#97;&amp;#x2e;&amp;#x6d;&amp;#97;&amp;#122;&amp;#122;&amp;#x69;&amp;#110;&amp;#x69;&amp;#64;&amp;#x67;&amp;#x6d;&amp;#97;&amp;#105;&amp;#x6c;&amp;#x2e;&amp;#x63;&amp;#x6f;&amp;#x6d;&lt;/</span><span class="n">a</span><span class="o">&gt;&amp;</span><span class="n">rdquo</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">source</span>       <span class="o">=</span> <span class="p">{</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar.git&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">.</span><span class="n">git</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;, :tag =&gt; &amp;lsquo;0.5&amp;rsquo; }</span>
+</span><span class='line'><span class="sr">  s.platform     = :ios, &amp;lsquo;5.0&amp;rsquo;</span>
+</span><span class='line'><span class="sr">  s.source_files = &amp;lsquo;AMScrollingNavbar&amp;rsquo;, &amp;lsquo;*.{h,m}&amp;rsquo;</span>
+</span><span class='line'><span class="sr">  s.requires_arc = true</span>
+</span><span class='line'><span class="sr">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Once the spec is merged in the Spec repo, a new pod is born, and with it the documentation page is also generated.</p>
+
+<h4>Cocoacontrols</h4>
+
+<p><a href="https://www.cocoacontrols.com/">Cocoacontrols</a> is my favorite place to window shop for new libraries. As soon as my pod is ready and I feel that the README is comprehensive enough, I submit my control to cocoacontrols' review queue. It&rsquo;s a great way to get some visibility from fellow developers, and a great way to discover new controls. A big thanks to <a href="https://www.cocoacontrols.com/about">Aaron, Marine and Bob</a>.</p>
+
+<h3>Maintaining the code</h3>
+
+<p>Once the code is in the wild, it&rsquo;s time to maintain the code. This means answering questions about its use, fixing possible issues and merging the always welcome pull requests. It can become a job of its own at times, but it&rsquo;s a high reward task, since it gives you the chance to experiment more and improve your code quite a lot.<br/>
+The only tool that I use is the <code>Issue</code> section of github. I tried once to get into the habit of tracking the issues with <a href="https://waffle.io/">Waffle</a>, but in the end I never really used it efficiently.<br/>
+AMScrollingNavbar was well received, and has now (what is for me) a fair amount of stargazers on Github. I&rsquo;d like to thank all the contributors that helped to improve the library, introducing new features and fixing my missteps.</p>
+
+<p>That about wraps up this auto referential post.<br/>
+Until next time.<br/>
+Andrea</p>
+]]></content>
+  </entry>
+  
+</feed>
