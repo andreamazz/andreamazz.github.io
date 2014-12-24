@@ -1,0 +1,261 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Hey iOS, I like you, we should be friends - Syntax Error</title>
+	<meta name="author" content="Andrea Mazzini">
+
+	
+	<meta name="description" content="I started this year with a new year&rsquo;s resolution: write at least a blog post per month. Let me check the date of the last post&hellip;. yep, &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="" rel="alternate" title="Syntax Error" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Syntax Error</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="http://google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:andreamazz.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		<a class="google" href="https://plus.google.com/+AndreaMazzini?rel=author" title="Google+">Google+</a>
+		
+		
+		<a class="twitter" href="http://twitter.com/theandreamazz" title="Twitter">Twitter</a>
+		
+		
+		<a class="github" href="https://github.com/andreamazz" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+    
+	</div>
+	<form class="search" action="http://google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:andreamazz.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Hey iOS, I Like You, We Should Be Friends</h2>
+	<div class="entry-content"><p>I started this year with a new year&rsquo;s resolution: <em>write at least a blog post per month</em>. Let me check the date of the last post&hellip;. yep, February 1st, oops, my bad. In my defense it&rsquo;s been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (<a href="https://itunes.apple.com/us/app/memento-i-know-this-place/id698153906?l=it&amp;ls=1&amp;mt=8">Memento: I know this place</a>), and also rewrote the <a href="http://memento.fancypixel.it">landing page</a> for it.<br/>
+I had a chance to try out some cool libraries and tools though, so here&rsquo;s my belated post of the month. The title itself is there just to express my appreciation for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling. Love it.</p>
+
+<!-- More -->
+
+
+<h4>Either I&rsquo;m drunk or the parallax effect is too heavy</h4>
+
+<p>Parallax effect is the new gimmick of iOS7, and it&rsquo;s so Apple-y: it&rsquo;s simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.</p>
+
+<h6>NGAParallaxMotion</h6>
+
+<p>That&rsquo;s a pretty straight forward library. You already know all too well the effect, just look at the springboard. <a href="https://github.com/michaeljbishop/NGAParallaxMotion">NGAParallaxMotion</a> makes it easy as pie to implement, just pop the pod in your podfile, and use the parallaxIntensity property. It can be also used by a designer with no coding skill, straight in an XCode storyboard. Kudos to <a href="https://github.com/michaeljbishop">Michael Bishop</a>, I wish I thought of that.</p>
+
+<h6>CSStickyHeaderFlowLayout</h6>
+
+<p>I like the iOS7 Twitter profile section. You scroll down, the profile background explodes and gets blurry. It&rsquo;s purely a cosmetic thing, makes no sense and that&rsquo;s why it&rsquo;s awesome. I like it so much that I decided to implement it in Memento. Enters <a href="https://github.com/jamztang/CSStickyHeaderFlowLayout">CSStickyHeaderFlowLayout</a>.</p>
+
+<p><img class="center" src="/images/posts/2014-03-10/memento.gif" title="'CSStickyHeaderFlowLayout'" ></p>
+
+<p>I was going to write a couple of lines describing how to implement it, but I see that the author just added a pretty comprehensive readme. So, tip of the hat to you <a href="https://github.com/jamztang">James Tang</a>!</p>
+
+<h4>Blur everything!</h4>
+
+<p>Blur is another big design thing in iOS7. In a recent project I found myself using <a href="https://github.com/andreamazz/REFrostedViewController">REFrostedViewController</a> to present a side menu. For a more concise menu (e.g.: to present a quick options menu) I use <a href="https://github.com/rnystrom/RNFrostedSidebar">RNFrostedSidebar</a>, another impressive piece of software, clean and effective. You&rsquo;ll find a modified version where you can add labels beneath the items on my <a href="https://github.com/andreamazz/RNFrostedSidebar">github page</a>.<br/>
+What about plain views? I happen to use <a href="https://github.com/JagCesar/iOS-blur">JCRBlurView</a> to obtain a fast and effective blur. It&rsquo;s brilliant, it &lsquo;steals&rsquo; the layer from a UIToolBar and makes it its own. I used the same technique in my <a href="https://github.com/andreamazz/AMDraggableBlurView">AMDraggableBlurView</a>.
+Wait&hellip; steal a cocoa layer to use in one of your views&hellip; that smells fishy&hellip; and here&rsquo;s the catch: it&rsquo;s been reported that applications that use such method might get refused.<br/>
+What I found out is that one of the <a href="https://itunes.apple.com/it/app/palmap-pro/id525999547?mt=8">app that I developed for a client</a> got into the store with no hiccups, but once I opened it from an iPad Mini retina I found out that the blurred view was 100% transparent. No blur, no view, just a transparent container.<br/>
+Lesson learned. From now on I&rsquo;ll be using <a href="https://github.com/nicklockwood/FXBlurView">FXBlurView</a>. BTW, if you happen to use the blurred view from <a href="http://canvaspod.io/">Canvas</a> you should know that they use the same method.</p>
+
+<h4>Photo galleries are boring</h4>
+
+<p>They are. It&rsquo;s even worse when you open up a photo, you pinch, you tap away to dismiss it&hellip; been there, done that. <a href="https://github.com/u10int/URBMediaFocusViewController">URBMediaFocusViewController</a> adds a little UIDynamics flavor to the mix, blurs the background and adds some parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It&rsquo;s a brilliant piece of software, really.</p>
+
+<h4>Liftoff</h4>
+
+<p><a href="https://github.com/thoughtbot/liftoff">Liftoff</a> is a cool little <em>opinionated</em> tool from the <a href="http://thoughtbot.com/">Thoughtbot</a> guys. In a couple of quick steps you can setup an Xcode project to use:</p>
+
+<ul>
+<li>4 spaces indentation level</li>
+<li>warning treated as errors</li>
+<li>Static Analysis</li>
+<li>TODO and FIXME treated as warnings</li>
+<li>a precompiled .gitignore and .gitattributes.</li>
+</ul>
+
+
+<p>It also can be used to create a brand new project, reducing the time spent reorganizing stuff to match the common (sense) conventions.<br/>
+Using it is easy as pie:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install liftoff
+</span><span class='line'>liftoff</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That&rsquo;s it.</p>
+
+<h4>Take off the boot(strap)s</h4>
+
+<p>That&rsquo;s unrelated to iOS per se, but since I found myself styling the landing page for <a href="http://memento.fancypixel.it">Memento: I know this place</a> I might as well spent a couple of lines on Pure.<br/>
+<a href="http://purecss.io/">Pure</a> is a pure css responsive web framework. It&rsquo;s unbelievably tiny, with a 4.5KB footprint, and also modular (so if you just need the grid system, you can just include that along with the base classes). If you have experience with Bootstrap or Zurb, you&rsquo;ll find yourself at home with their grid system and components. It can give a site a breath of fresh air. Checkout their <a href="http://purecss.io/layouts/">layout samples</a>.</p>
+
+<h4>My stuff</h4>
+
+<p>I try to keep myself busy in the iOS open-source community as well, so I&rsquo;ll sign off with the links of the new pods that I developed in the last two months, hoping that they might come in handy:</p>
+
+<ul>
+<li><a href="https://github.com/andreamazz/UIView-Shake">UIView+Shake</a>: UIView category that adds a shake animation like the password field of the OsX login screen.</li>
+<li><a href="https://github.com/andreamazz/UIView-draggable">UIView+draggable</a>: UIView category that adds dragging capabilities.</li>
+<li><a href="https://github.com/andreamazz/AMTagListView">AMTagListView</a>: UIScrollView subclass that allows to add a list of highly customizable tags.</li>
+<li><a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a>: Scrollable UINavigationBar that follows the scrolling of a UIScrollView, now updated to be integrated as a UIViewController&rsquo;s category.</li>
+</ul>
+
+
+<p>That&rsquo;s all for now.<br/>
+Cheers.
+Andrea</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-10T19:30:00+01:00" pubdate data-updated="true">Mar 10<span>th</span>, 2014</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/objc/'>objc</a>
+
+
+</div>
+	
+	<div class="comments"><a href="#disqus_thread">Comments</a></div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		<a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		<a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+		
+		
+	</div>
+	
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2014
+
+    Andrea Mazzini
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'uicode';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://andreamazz.github.io/blog/2014/03/10/hey-ios/';
+        var disqus_url = 'http://andreamazz.github.io/blog/2014/03/10/hey-ios/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//go.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-42282237-7']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+
+</body>
+</html>

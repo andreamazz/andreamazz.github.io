@@ -1,0 +1,382 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Rails Test setup - Syntax Error</title>
+	<meta name="author" content="Andrea Mazzini">
+
+	
+	<meta name="description" content="Here&rsquo;s how I usually setup my test environment on Rails. I&rsquo;m using mainly RSpec and Capybara, so nothing new under the sun, but this &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="" rel="alternate" title="Syntax Error" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Syntax Error</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="http://google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:andreamazz.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		<a class="google" href="https://plus.google.com/+AndreaMazzini?rel=author" title="Google+">Google+</a>
+		
+		
+		<a class="twitter" href="http://twitter.com/theandreamazz" title="Twitter">Twitter</a>
+		
+		
+		<a class="github" href="https://github.com/andreamazz" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+    
+	</div>
+	<form class="search" action="http://google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:andreamazz.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Rails Test Setup</h2>
+	<div class="entry-content"><p>Here&rsquo;s how I usually setup my test environment on Rails. I&rsquo;m using mainly RSpec and Capybara, so nothing new under the sun, but this should provide a mindless copy and paste to get you (mainly me) started.</p>
+
+<!-- more -->
+
+
+<p>First of all, the gems used. This configuration is in part taken from the book <a href="https://leanpub.com/everydayrailsrspec">&ldquo;Testing with RSpec&rdquo;</a> by Aaron Summer:</p>
+
+<figure class='code'><figcaption><span>Gemfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">group</span> <span class="ss">:development</span><span class="p">,</span> <span class="ss">:test</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;rspec-rails&#39;</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;factory_girl_rails&#39;</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;rb-fsevent&#39;</span><span class="p">,</span> <span class="nb">require</span><span class="p">:</span> <span class="kp">false</span> <span class="k">if</span> <span class="no">RUBY_PLATFORM</span> <span class="o">=~</span> <span class="sr">/darwin/i</span> <span class="c1"># only on OSX</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;guard-rspec&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">group</span> <span class="ss">:test</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;shoulda-matchers&#39;</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;faker&#39;</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;capybara&#39;</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;poltergeist&#39;</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;database_cleaner&#39;</span>  <span class="c1"># DatabaseCleaner required to test user authentication protected routes</span>
+</span><span class='line'>  <span class="n">gem</span> <span class="s1">&#39;launchy&#39;</span> <span class="c1"># Provides the awesome save_and_open_page method in your capybara specs</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A pretty basic setup, RSpec with shoulda matchers, FactoryGirl + Faker for cool mocks and Capybara with Poltergeist as webdriver.</p>
+
+<p>You might want to install PhantomJS (used by Poltergeist). In Mac OSX you can just use brew:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install phantomjs</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With that out of the way the next step is to setup RSpec</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>rails g rspec:install</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I like to customize rspec with the dotted (or the <code>documentation</code> if I&rsquo;m feeling verbose) and colored notation by adding a .rspec file.</p>
+
+<figure class='code'><figcaption><span>.rspec </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>--color --format progress</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then I&rsquo;ll customize the generators:</p>
+
+<figure class='code'><figcaption><span>config/application.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">generators</span> <span class="k">do</span> <span class="o">|</span><span class="n">g</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">g</span><span class="o">.</span><span class="n">test_framework</span> <span class="ss">:rspec</span><span class="p">,</span>
+</span><span class='line'>    <span class="ss">fixtures</span><span class="p">:</span> <span class="kp">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">view_specs</span><span class="p">:</span> <span class="kp">false</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">helper_specs</span><span class="p">:</span> <span class="kp">false</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">routing_specs</span><span class="p">:</span> <span class="kp">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">controller_specs</span><span class="p">:</span> <span class="kp">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">request_specs</span><span class="p">:</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="n">g</span><span class="o">.</span><span class="n">fixture_replacement</span> <span class="ss">:factory_girl</span><span class="p">,</span> <span class="ss">dir</span><span class="p">:</span> <span class="s1">&#39;spec/factories&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see I let the generator create the fixtures (using FactoryGirl) and the controller and routes specs. I create models and request spec manually, and I don&rsquo;t care for view specs.</p>
+
+<p>That&rsquo;s about it for Rails, the next step is to do some adjustments to the spec_helper:</p>
+
+<figure class='code'><figcaption><span>spec/spec_helper_.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">ENV</span><span class="o">[</span><span class="s2">&quot;RAILS_ENV&quot;</span><span class="o">]</span> <span class="o">||=</span> <span class="s1">&#39;test&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;../../config/environment&quot;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;rspec/rails&#39;</span>
+</span><span class='line'><span class="c1">#require &#39;rspec/autorun&#39; #removed to support Zeus</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;capybara/poltergeist&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Dir</span><span class="o">[</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;spec/support/**/*.rb&quot;</span><span class="p">)</span><span class="o">].</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="nb">require</span> <span class="n">f</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span><span class="o">.</span><span class="n">check_pending!</span> <span class="k">if</span> <span class="n">defined?</span><span class="p">(</span><span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">RSpec</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">include</span> <span class="ss">FactoryGirl</span><span class="p">:</span><span class="ss">:Syntax</span><span class="o">::</span><span class="no">Methods</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">filter_run_excluding</span> <span class="ss">slow</span><span class="p">:</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">fixture_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="o">::</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="s2">/spec/fixtures&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">Capybara</span><span class="o">.</span><span class="n">javascript_driver</span> <span class="o">=</span> <span class="ss">:poltergeist</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># DatabaseCleaner required to test user authentication protected routes</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">use_transactional_fixtures</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="ss">:truncation</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">start</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="no">DatabaseCleaner</span><span class="o">.</span><span class="n">clean</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">infer_base_class_for_anonymous_controllers</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="s2">&quot;random&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This sets up DatabaseCleaner and the webdriver for Capybara. It also tells  RSpec to skip tests marked as <code>:slow</code>.</p>
+
+<h4>Other goodies</h4>
+
+<p>Almost there, now it&rsquo;s time to setup a couple of tools that makes testing less cumbersome.
+First of all, let&rsquo;s setup <a href="https://github.com/guard/guard">Guard</a>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>guard init rspec</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&hellip; and that&rsquo;s about it.</p>
+
+<p>Let&rsquo;s finish off by configuring <a href="https://github.com/burke/zeus">Zeus</a> if needed (or wanted). That&rsquo;s pretty straightforward, we just need to change the test environment command in the zeus.json generated by <code>zeus init</code>:</p>
+
+<figure class='code'><figcaption><span>zeus.json </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="s2">&quot;test_environment&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;test_helper&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="o">[</span><span class="s2">&quot;rspec&quot;</span><span class="o">]</span><span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And that should be it, therefore</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">expect</span><span class="p">(</span><span class="n">post</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be_helpful</span> <span class="c1"># I&#39;m quite the commedian</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-05T19:20:00+01:00" pubdate data-updated="true">Jan 5<span>th</span>, 2014</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/rails/'>rails</a>, <a class='category' href='/blog/categories/rspec/'>rspec</a>
+
+
+</div>
+	
+	<div class="comments"><a href="#disqus_thread">Comments</a></div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		<a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		<a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+		
+		
+	</div>
+	
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2014
+
+    Andrea Mazzini
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'uicode';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://andreamazz.github.io/blog/2014/01/05/rails-test-setup/';
+        var disqus_url = 'http://andreamazz.github.io/blog/2014/01/05/rails-test-setup/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//go.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-42282237-7']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+
+</body>
+</html>

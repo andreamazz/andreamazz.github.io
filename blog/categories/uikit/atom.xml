@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: uikit | Syntax Error]]></title>
+  <link href="http://andreamazz.github.io/blog/categories/uikit/atom.xml" rel="self"/>
+  <link href="http://andreamazz.github.io/"/>
+  <updated>2014-07-12T12:03:54+02:00</updated>
+  <id>http://andreamazz.github.io/</id>
+  <author>
+    <name><![CDATA[Andrea Mazzini]]></name>
+    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[UIKit Dynamics]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/05/22/uikit-dynamics/"/>
+    <updated>2014-05-22T19:19:00+02:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/05/22/uikit-dynamics</id>
+    <content type="html"><![CDATA[<p>I&rsquo;m late to the party with this, but I finally had a chance to play around with UIKit Dynamics. I like what I see, I really like it&hellip; I&rsquo;ll spend the rest of my days implementing physics based UI elements&hellip; UIImageView slingshots, UISwitch trabuchets, UISlider catapults&hellip; you name it. Jokes aside, a Github user pointed out in the issue section of <a href="https://github.com/andreamazz/AMWaveTransition">AMWaveTransition</a> that Facebook Paper&rsquo;s <em>wavy</em> transition also implements the interactive pop gesture. &ldquo;Pffftt&hellip; easy&rdquo; I thought. I was wrong. This is how I found out about my new favorite framework.</p>
+
+<!-- More -->
+
+
+<h3>UIPercentDrivenInteractiveTransition</h3>
+
+<p>I started doing some research on custom interactive transitions, and I stumbled upon <code>UIPercentDrivenInteractiveTransition</code>. The logic behind it is really clever, the developer just needs to provide a custom animation and use a UIPanGestureRecognizer to keep track of the completion percentage, and notify the system with such value. UIKit does its magic and the animation is performed in small steps.
+That sounds easy enough, but AMWaveTransition uses a couple of hacky ways to achieve its effect, and it&rsquo;s not based on a single animation block, but in different (and nested) animations.
+I was not surprised when I found out that my percent driven transition didn&rsquo;t work. At all.<br/>
+Besides that, if you look closely to the Paper&rsquo;s implementation, you can see that the cells react to the finger&rsquo;s Y coordinate, not just the X. This means that the cell below the finger is the one &lsquo;leading the charge&rsquo;, the other cells lag behind it. That smells a lot like a custom transition, not a percent driven one.</p>
+
+<h3>UIScreenEdgePanGestureRecognizer</h3>
+
+<p>&ldquo;Ok, no UIKit magic for me this time, I&rsquo;ll just write the animations from scratch.&rdquo;. A <code>UIScreenEdgePanGestureRecognizer</code> and some UIView&rsquo;s animations sounded like the right tools. I just had to figure out what cell to move first, and let the other lag behind, taking account of the swipe velocity. The gestures' tools make that easy enough, you can get the state and velocity of the finger, and apply different animations with different durations and/or delays. Running an animation for each time that the swipe gesture changes isn&rsquo;t a good idea though. A lot of animations get queued up, and even whith the option <code>UIViewAnimationOptionBeginFromCurrentState</code> the resulting effect just isn&rsquo;t right. Also, managing the possibility that the user might swipe back and forth before completing or cancelling increases the complexity.</p>
+
+<p>I didn&rsquo;t want that.</p>
+
+<h3>Dynamics!</h3>
+
+<p>UIKit Dynamics, introduced with iOS7, is a physics engine that lets you apply physics traits to UIKit elements. Its implementation is brilliantly simple, there&rsquo;s an Animator object that handles the various behaviors associated to an interface object. The animator is attached to a reference view (basically the container of all the other views) and handles all the animations, defined by some predefined behaviors (and you can define your own):</p>
+
+<ul>
+<li>UIGravityBehavior</li>
+<li>UICollisionBehavior</li>
+<li>UIAttachmentBehavior</li>
+<li>UISnapBehavior</li>
+<li>UIPushBehavior</li>
+</ul>
+
+
+<p>Each behavior is configurable, and can be combined with the others.</p>
+
+<h4>UIAttachmentBehavior</h4>
+
+<p>From its <a href="https://developer.apple.com/library/ios/documentation/uikit/reference/UIAttachmentBehavior_Class/Reference/Reference.html">class reference</a>: <em>&ldquo;An attachment behavior specifies a dynamic connection between two dynamic items, or between a dynamic item and an anchor point. By default, an item’s attachment point is at its center, but you can change that.&rdquo;</em>. I can change that&hellip; sounds good. I can attach a view to an anchorpoint, and update such point, say to follow the user&rsquo;s swipe. It also features a couple of nifty properties:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// The amount of damping to apply to the attachment behavior.</span>
+</span><span class='line'><span class="k">@property</span><span class="p">(</span><span class="n">readwrite</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">CGFloat</span> <span class="n">damping</span>
+</span><span class='line'><span class="c1">// The frequency of oscillation for the attachment behavior.</span>
+</span><span class='line'><span class="k">@property</span><span class="p">(</span><span class="n">readwrite</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">CGFloat</span> <span class="n">frequency</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+These property will make the attachment springy. Feeling confident.</p>
+
+<h3>Interactive pop</h3>
+
+<p>Performing the interactive pop now should be just a matter of making some calculation, and figure out which view to move and where. I started by adding a <code>UIScreenEdgePanGestureRecognizer</code> to the UINavigationController provided by the user:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">attachInteractiveGestureToNavigationController:</span><span class="p">(</span><span class="n">UINavigationController</span> <span class="o">*</span><span class="p">)</span><span class="n">navigationController</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span> <span class="o">=</span> <span class="n">navigationController</span><span class="p">;</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">gesture</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIScreenEdgePanGestureRecognizer</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithTarget:</span><span class="n">self</span> <span class="nl">action:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">handlePan:</span><span class="p">)];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">gesture</span> <span class="nl">setEdges:</span><span class="n">UIRectEdgeLeft</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span> <span class="nl">addGestureRecognizer:</span><span class="n">self</span><span class="p">.</span><span class="n">gesture</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">animator</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIDynamicAnimator</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithReferenceView:</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span><span class="p">];</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span> <span class="o">=</span> <span class="p">[</span><span class="err">@</span><span class="p">[]</span> <span class="n">mutableCopy</span><span class="p">];</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">attachmentsTo</span> <span class="o">=</span> <span class="p">[</span><span class="err">@</span><span class="p">[]</span> <span class="n">mutableCopy</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+As you can see I also created a <code>UIDynamicAnimator</code>, he&rsquo;s the good guy that&rsquo;ll do all the heavy lifting in a while.</p>
+
+<h4>Handling the gesture</h4>
+
+<p>Once a swipe gesture from the left edge is performed, I need to get a hold of the cells from both the view controllers (the current visible controller, and the one we are swiping back to):</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Starting controller</span>
+</span><span class='line'><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">fromVC</span><span class="p">;</span>
+</span><span class='line'><span class="n">fromVC</span> <span class="o">=</span> <span class="p">(</span><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">topViewController</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Controller that will be visible after the pop</span>
+</span><span class='line'><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">toVC</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">viewControllers</span> <span class="nl">indexOfObject:</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">topViewController</span><span class="p">];</span>
+</span><span class='line'><span class="n">toVC</span> <span class="o">=</span> <span class="p">(</span><span class="n">UIViewController</span><span class="o">&lt;</span><span class="n">AMWaveTransitioning</span><span class="o">&gt;</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">viewControllers</span><span class="p">[</span><span class="n">index</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>While I&rsquo;m at it I also ask the gesture for the touch position and the swipe horizontal velocity:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="kt">float</span> <span class="n">velocity</span> <span class="o">=</span> <span class="p">[</span><span class="n">gesture</span> <span class="nl">velocityInView:</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span><span class="p">].</span><span class="n">x</span><span class="p">;</span>
+</span><span class='line'><span class="n">CGPoint</span> <span class="n">touch</span> <span class="o">=</span> <span class="p">[</span><span class="n">gesture</span> <span class="nl">locationInView:</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now the fun part. When the gesture starts, I need to figure out which cell is below the touch point, and then wire up a <code>UIAttachmentBehavior</code> to each cell. I&rsquo;ll be storing the behavior in a mutable array, and add it to our trusty animator. The anchor point will be the touch&rsquo;s X coordinate, while the Y coordinate will be the center of the cell (playing around with this coordinate can be fun, it&rsquo;s worth a try).</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIView</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">view</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// The &#39;selected&#39; cell will be the one leading the other cells</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">CGRectContainsPoint</span><span class="p">([</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertRect:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">],</span> <span class="n">touch</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">self</span><span class="p">.</span><span class="n">selectionIndexFrom</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">idx</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">UIAttachmentBehavior</span> <span class="o">*</span><span class="n">attachment</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIAttachmentBehavior</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithItem:</span><span class="n">view</span>
+</span><span class='line'>                                                             <span class="nl">attachedToAnchor:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="n">touch</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertPoint:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">].</span><span class="n">y</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">}];</span>
+</span><span class='line'><span class="p">[</span><span class="n">attachment</span> <span class="nl">setDamping:</span><span class="mf">0.4</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">attachment</span> <span class="nl">setFrequency:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">animator</span> <span class="nl">addBehavior:</span><span class="n">attachment</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span> <span class="nl">addObject:</span><span class="n">attachment</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>I need to do this for both <code>fromVC</code> and <code>toVC</code>.</p>
+
+<h4>Moving the cells</h4>
+
+<p>Believe it or not, the hard part is over. Thanks to UIKit Dynamics handling the gesture change is easy as updating the point:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">gesture</span><span class="p">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">UIGestureRecognizerStateChanged</span><span class="p">)</span> <span class="p">{</span>      <span class="o">&lt;</span><span class="n">br</span><span class="o">/&gt;</span>
+</span><span class='line'>  <span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIView</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">view</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>  <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="nl">setAnchorPoint:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="n">touch</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertPoint:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">].</span><span class="n">y</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The code above just moves the cells in the old fashioned way. You might point out that that&rsquo;s not <em>wavy</em> at all. Well&hellip; it&rsquo;s not.
+To make it more interesting we need to play around with the velocity and the distance between cells.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="kt">float</span> <span class="n">delta</span> <span class="o">=</span> <span class="n">touch</span><span class="p">.</span><span class="n">x</span> <span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="n">abs</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">selectionIndexFrom</span> <span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">idx</span><span class="p">)</span> <span class="o">*</span> <span class="n">velocity</span> <span class="o">/</span> <span class="mi">50</span><span class="p">;</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">attachmentsFrom</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="nl">setAnchorPoint:</span><span class="p">(</span><span class="n">CGPoint</span><span class="p">){</span><span class="n">delta</span><span class="p">,</span> <span class="p">[</span><span class="n">view</span><span class="p">.</span><span class="n">superview</span> <span class="nl">convertPoint:</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span> <span class="nl">toView:</span><span class="nb">nil</span><span class="p">].</span><span class="n">y</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+This takes the touch value, subtracts an amount of pixel determined by the distance from the starting cell, multiplied by the velocity (that is toned down by the magic value 50, provided by wisdom. And by wisdom I mean trial and error).
+If you set this up and play around with it a bit you&rsquo;ll notice that it&rsquo;s easy to break stuff. If you swipe too fast, <code>delta</code> becomes huge, and the latch changes direction. Fixing issues like this can be a pain, fortunately the open source community comes to the rescue.</p>
+
+<h4>DynamicXray</h4>
+
+<p><a href="http://dynamicxray.net/">DynamicXray</a> is a tool that provides a graphical runtime representation of the inner workings of a UIKit animator. You just add it to your animator like you would with a behavior, and all your bounds, constraints and forces are represented alongside your views. That&rsquo;s really handy to figure out why a view is acting weird.</p>
+
+<p><img class="center" src="/images/posts/2014-05-22/xray.png" title="&lsquo;Result&rsquo;" ></p>
+
+<p>With the debug wireframe on I was able to see that an excessive swipe caused the latch to change direction, causing the view to follow the touch coordinates from the wrong side of the screen. It&rsquo;s an easy fix, that involves another magic number (2):</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">delta</span> <span class="o">&gt;</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">delta</span> <span class="o">=</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">view</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Needles to say, I&rsquo;m not happy with this solution, but for now it would do.</p>
+
+<p>With all this set up, the rest was just maintenance&hellip; I just need to clean everything up when the gesture reaches its end, and call <code>popViewControllerAnimated</code> on the navigation controller.</p>
+
+<p>And there we go:</p>
+
+<p><img class="center" src="/images/posts/2014-05-22/screenshot.gif" title="&lsquo;Result&rsquo;" ></p>
+
+<p>As usual, you can find the code on <a href="https://github.com/andreamazz/AMWaveTransition">Github</a>.</p>
+
+<p>Until next time.</p>
+]]></content>
+  </entry>
+  
+</feed>

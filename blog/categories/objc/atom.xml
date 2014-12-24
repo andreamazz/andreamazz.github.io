@@ -1,0 +1,1261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: objc | Syntax Error]]></title>
+  <link href="http://andreamazz.github.io/blog/categories/objc/atom.xml" rel="self"/>
+  <link href="http://andreamazz.github.io/"/>
+  <updated>2014-07-12T12:03:54+02:00</updated>
+  <id>http://andreamazz.github.io/</id>
+  <author>
+    <name><![CDATA[Andrea Mazzini]]></name>
+    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Transitioning]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/04/19/transitioning/"/>
+    <updated>2014-04-19T19:30:00+02:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/04/19/transitioning</id>
+    <content type="html"><![CDATA[<p>I like to kick the morning off by visiting a handful of sites that collect cool app designs. One of my favorite is <a href="http://capptivate.co">Capptivate</a>. I often find myself browsing the site thinking &ldquo;I want one of that.&rdquo;. It&rsquo;s even better if the design triggers another question in my mind: &ldquo;How did they do that?!&rdquo;.<br/>
+I had one of these moments last week, looking at the push transition in <a href="http://capptivate.co/2014/02/04/paper/">Facebook&rsquo;s Paper</a> app. It was a good chance to take a stab at iOS7 custom transitions.</p>
+
+<!-- More -->
+
+
+<h3>Learning custom transitions</h3>
+
+<p>I won&rsquo;t be covering in depth the custom transition APIs in this post, just what I needed to learn to reproduce the aforementioned effect. The main reason is because there are already good sources that cover this matter, I learned a lot from NSScreencast&rsquo;s <a href="http://nsscreencast.com/episodes/86-ios-7-view-controller-transitions">&ldquo;iOS7 View controller Transitions&rdquo;</a> (the subscription fee is well worth all the quality content) and objc.io&rsquo;s <a href="http://www.objc.io/issue-5/view-controller-transitions.html">&ldquo;View controller transitions&rdquo;</a>. The former covers modal transitions, while the later coverage of push transitions was really helpful.</p>
+
+<h3>UINavigationController&rsquo;s delegate</h3>
+
+<p>iOS7 introduces a new set of delegate methods in UINavigationController&rsquo;s protocol:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="err">–</span> <span class="nl">navigationController:animationControllerForOperation:fromViewController:toViewController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationController:interactionControllerForAnimationController:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerPreferredInterfaceOrientationForPresentation:</span>
+</span><span class='line'><span class="err">–</span> <span class="nl">navigationControllerSupportedInterfaceOrientations:</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The first one is the most interesting of the bunch, it&rsquo;s called when the navigation controller is ready to animate to a new state (or for better terms, when it&rsquo;s ready to perform a new <code>UINavigationControllerOperation</code>) and expects in return a new object that conforms to the <code>UIViewControllerAnimatedTransitioning</code> protocol. It also has a reference to the view controller that we are transitioning from and a reference to the controller that we are transitioning to:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">id</span><span class="o">&lt;</span><span class="n">UIViewControllerAnimatedTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>               <span class="nl">navigationController:</span><span class="p">(</span><span class="n">UINavigationController</span> <span class="o">*</span><span class="p">)</span><span class="n">navigationController</span>
+</span><span class='line'>    <span class="nl">animationControllerForOperation:</span><span class="p">(</span><span class="n">UINavigationControllerOperation</span><span class="p">)</span><span class="n">operation</span>
+</span><span class='line'>                 <span class="nl">fromViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="n">fromVC</span>
+</span><span class='line'>                   <span class="nl">toViewController:</span><span class="p">(</span><span class="n">UIViewController</span><span class="o">*</span><span class="p">)</span><span class="n">toVC</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>UIViewControllerAnimatedTransitioning</h3>
+
+<p>Cool, we get notified when the navigation controller is ready to make its magic. Let&rsquo;s take a look at what kind of object it expects from us, by inspecting <code>UIViewControllerAnimatedTransitioning</code> protocol:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="k">@protocol</span> <span class="nc">UIViewControllerAnimatedTransitioning</span> <span class="o">&lt;</span><span class="n">NSObject</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="n">NSTimeInterval</span><span class="p">)</span><span class="nl">transitionDuration:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="n">transitionContext</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">animateTransition:</span><span class="p">(</span><span class="kt">id</span> <span class="o">&lt;</span><span class="n">UIViewControllerContextTransitioning</span><span class="o">&gt;</span><span class="p">)</span><span class="n">transitionContext</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@optional</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">animationEnded:</span><span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="n">transitionCompleted</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">@end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Easy enough&hellip; one call for the animation&rsquo;s duration and one call to perform said animation.<br/>
+Before diving into the code we might want to lay out our animation graphically. Let&rsquo;s fire up Sketch and draw something:</p>
+
+<p><img class="center" src="/images/posts/2014-04-19/sketch.png" title="&lsquo;Sketch&rsquo;" ></p>
+
+<p>Ok, so we have two view controllers, they both have table views, and we want to present the new cells with a slight delay each, while kicking the old cells to the other side, with the same delay.<br/>
+Let&rsquo;s break it down.</p>
+
+<p><em>From</em> ViewController:</p>
+
+<ul>
+<li>Get the visible cells in the table view</li>
+<li>Move each cell to the left by the screen width</li>
+<li>Fade out each cell</li>
+<li>On completion set the cells back to their position (we&rsquo;ll need them on <em>pop</em>)</li>
+</ul>
+
+
+<p><em>To</em> ViewController:</p>
+
+<ul>
+<li>Set the controller&rsquo;s frame to match the starting controller</li>
+<li>Move the controller&rsquo;s frame to the side</li>
+<li>Get the visible cells in the table view</li>
+<li>Push the cells to the right <em>with no animation</em></li>
+<li>Move each cell to the left</li>
+</ul>
+
+
+<p>That looks pretty simple, but there are couple of caveats.<br/>
+The first thing that I noticed is that the new cells are not available at first. The second issue was that if I moved the destination frame to match the source one right away, the source cells would disappear instantly.<br/>
+To solve these issues I had to use a little trick: use a <code>0</code> duration animation where I move the frame of the destination controller to the point <code>(1,0)</code>. This allows the destination controller to load its cells, and the source controller will still be visible.</p>
+
+<p>To sum it up (I&rsquo;ll include only the <em>push</em> code):
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="c1">// Move the destination in place</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">source</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// And kick it aside</span>
+</span><span class='line'><span class="n">toVC</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">SCREEN_WIDTH</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// First step is required to trigger the load of the visible cells.</span>
+</span><span class='line'><span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="mi">0</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="nb">nil</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// Plain animation that moves the destination controller in place. Once it&#39;s done it will notify the transition context</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>                <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span> <span class="nl">delay:</span><span class="mi">0</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="o">^</span><span class="p">{</span>
+</span><span class='line'>                        <span class="p">[</span><span class="n">toVC</span><span class="p">.</span><span class="n">view</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>                <span class="p">}</span> <span class="nl">completion:</span><span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="p">[</span><span class="n">transitionContext</span> <span class="nl">completeTransition:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'>                <span class="p">}];</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Animates the cells of the starting view controller</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">fromVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="o">-</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">completion</span><span class="p">)(</span><span class="kt">BOOL</span><span class="p">)</span> <span class="o">=</span> <span class="o">^</span><span class="p">(</span><span class="kt">BOOL</span> <span class="n">finished</span><span class="p">){</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="n">completion</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">toVC</span> <span class="nl">respondsToSelector:</span><span class="k">@selector</span><span class="p">(</span><span class="n">visibleCells</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">toVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="nl">enumerateObjectsWithOptions:</span><span class="n">NSEnumerationReverse</span> <span class="nl">usingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSTimeInterval</span> <span class="n">delay</span> <span class="o">=</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span><span class="n">idx</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)[[</span><span class="n">fromVC</span> <span class="n">visibleCells</span><span class="p">]</span> <span class="n">count</span><span class="p">])</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">maxDelay</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformMakeTranslation</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>        <span class="kt">void</span> <span class="p">(</span><span class="o">^</span><span class="n">animation</span><span class="p">)()</span> <span class="o">=</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setTransform:</span><span class="n">CGAffineTransformIdentity</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">obj</span> <span class="nl">setAlpha:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">UIView</span> <span class="nl">animateWithDuration:</span><span class="n">self</span><span class="p">.</span><span class="n">duration</span> <span class="nl">delay:</span><span class="n">delay</span> <span class="nl">options:</span><span class="n">UIViewAnimationOptionCurveEaseIn</span> <span class="nl">animations:</span><span class="n">animation</span> <span class="nl">completion:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+This will get the cell animating back and forth, but the effect is far from impressive, we need some further tinkering.</p>
+
+<h3>Setting up the view controller</h3>
+
+<p>If you take a look at Paper, the cells move back and forth on the same background image, you can&rsquo;t see a clear cut from a view controller to the other. That&rsquo;s easy to achieve, we just need to configure our navigation controller like this:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="nl">colorWithPatternImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">background</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setBackgroundImage:</span><span class="p">[</span><span class="n">UIImage</span> <span class="nl">imageNamed:</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">navbar</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;]</span> <span class="nl">forBarMetrics:</span><span class="n">UIBarMetricsDefault</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">view</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">tableView</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span> <span class="nl">setTintColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">whiteColor</span><span class="p">]];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And our cells need to be transparent too:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="n">UITableViewCell</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="nl">tableView:</span><span class="p">(</span><span class="n">UITableView</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">tableView</span> <span class="nl">cellForRowAtIndexPath:</span><span class="p">(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="n">indexPath</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// ... </span>
+</span><span class='line'><span class="p">[</span><span class="n">cell</span> <span class="nl">setBackgroundColor:</span><span class="p">[</span><span class="n">UIColor</span> <span class="n">clearColor</span><span class="p">]];</span>
+</span><span class='line'><span class="p">[</span><span class="n">cell</span> <span class="nl">setSelectionStyle:</span><span class="n">UITableViewCellSelectionStyleNone</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// ...</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now we can take the new animator for a spin, by returning it in the delegate method:</p>
+
+<p><code>navigationController:animationControllerForOperation:fromViewController:toViewController:</code></p>
+
+<p>Here&rsquo;s the result:</p>
+
+<p><img class="center" src="/images/posts/2014-04-19/screenshot.gif" title="&lsquo;Result&rsquo;" ></p>
+
+<p>It&rsquo;s not perfect, but it can be easily tweaked.</p>
+
+<h3>The code</h3>
+
+<p>I released all the code described above as a pod. It includes both the push and pop operations, and its fairly customizable.<br/>
+You can find the source <a href="https://github.com/andreamazz/AMWaveTransition">here</a>.</p>
+
+<p>Until next time.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hey iOS, I like you, we should be friends]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/03/10/hey-ios/"/>
+    <updated>2014-03-10T19:30:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/03/10/hey-ios</id>
+    <content type="html"><![CDATA[<p>I started this year with a new year&rsquo;s resolution: <em>write at least a blog post per month</em>. Let me check the date of the last post&hellip;. yep, February 1st, oops, my bad. In my defense it&rsquo;s been a crazy month. I spent the last couple of weeks restyling (basically from the ground up) one of our apps over at Fancy Pixel (<a href="https://itunes.apple.com/us/app/memento-i-know-this-place/id698153906?l=it&amp;ls=1&amp;mt=8">Memento: I know this place</a>), and also rewrote the <a href="http://memento.fancypixel.it">landing page</a> for it.<br/>
+I had a chance to try out some cool libraries and tools though, so here&rsquo;s my belated post of the month. The title itself is there just to express my appreciation for iOS and its open-source community. I mean, the quantity and quality of third party libraries is mind boggling. Love it.</p>
+
+<!-- More -->
+
+
+<h4>Either I&rsquo;m drunk or the parallax effect is too heavy</h4>
+
+<p>Parallax effect is the new gimmick of iOS7, and it&rsquo;s so Apple-y: it&rsquo;s simple, cost basically nothing in performances, and yet is so effective. I found a couple of libraries that make its implementation a breeze: NGAParallaxMotion and CSStickyHeaderFlowLayout.</p>
+
+<h6>NGAParallaxMotion</h6>
+
+<p>That&rsquo;s a pretty straight forward library. You already know all too well the effect, just look at the springboard. <a href="https://github.com/michaeljbishop/NGAParallaxMotion">NGAParallaxMotion</a> makes it easy as pie to implement, just pop the pod in your podfile, and use the parallaxIntensity property. It can be also used by a designer with no coding skill, straight in an XCode storyboard. Kudos to <a href="https://github.com/michaeljbishop">Michael Bishop</a>, I wish I thought of that.</p>
+
+<h6>CSStickyHeaderFlowLayout</h6>
+
+<p>I like the iOS7 Twitter profile section. You scroll down, the profile background explodes and gets blurry. It&rsquo;s purely a cosmetic thing, makes no sense and that&rsquo;s why it&rsquo;s awesome. I like it so much that I decided to implement it in Memento. Enters <a href="https://github.com/jamztang/CSStickyHeaderFlowLayout">CSStickyHeaderFlowLayout</a>.</p>
+
+<p><img class="center" src="/images/posts/2014-03-10/memento.gif" title="&lsquo;CSStickyHeaderFlowLayout&rsquo;" ></p>
+
+<p>I was going to write a couple of lines describing how to implement it, but I see that the author just added a pretty comprehensive readme. So, tip of the hat to you <a href="https://github.com/jamztang">James Tang</a>!</p>
+
+<h4>Blur everything!</h4>
+
+<p>Blur is another big design thing in iOS7. In a recent project I found myself using <a href="https://github.com/andreamazz/REFrostedViewController">REFrostedViewController</a> to present a side menu. For a more concise menu (e.g.: to present a quick options menu) I use <a href="https://github.com/rnystrom/RNFrostedSidebar">RNFrostedSidebar</a>, another impressive piece of software, clean and effective. You&rsquo;ll find a modified version where you can add labels beneath the items on my <a href="https://github.com/andreamazz/RNFrostedSidebar">github page</a>.<br/>
+What about plain views? I happen to use <a href="https://github.com/JagCesar/iOS-blur">JCRBlurView</a> to obtain a fast and effective blur. It&rsquo;s brilliant, it &lsquo;steals&rsquo; the layer from a UIToolBar and makes it its own. I used the same technique in my <a href="https://github.com/andreamazz/AMDraggableBlurView">AMDraggableBlurView</a>.
+Wait&hellip; steal a cocoa layer to use in one of your views&hellip; that smells fishy&hellip; and here&rsquo;s the catch: it&rsquo;s been reported that applications that use such method might get refused.<br/>
+What I found out is that one of the <a href="https://itunes.apple.com/it/app/palmap-pro/id525999547?mt=8">app that I developed for a client</a> got into the store with no hiccups, but once I opened it from an iPad Mini retina I found out that the blurred view was 100% transparent. No blur, no view, just a transparent container.<br/>
+Lesson learned. From now on I&rsquo;ll be using <a href="https://github.com/nicklockwood/FXBlurView">FXBlurView</a>. BTW, if you happen to use the blurred view from <a href="http://canvaspod.io/">Canvas</a> you should know that they use the same method.</p>
+
+<h4>Photo galleries are boring</h4>
+
+<p>They are. It&rsquo;s even worse when you open up a photo, you pinch, you tap away to dismiss it&hellip; been there, done that. <a href="https://github.com/u10int/URBMediaFocusViewController">URBMediaFocusViewController</a> adds a little UIDynamics flavor to the mix, blurs the background and adds some parallax effect, making something simple like viewing a picture a lot more impressive. It also implements asynchronous download of a picture from a remote service and adds a spinner to the thumbnail that triggers the viewer. It&rsquo;s a brilliant piece of software, really.</p>
+
+<h4>Liftoff</h4>
+
+<p><a href="https://github.com/thoughtbot/liftoff">Liftoff</a> is a cool little <em>opinionated</em> tool from the <a href="http://thoughtbot.com/">Thoughtbot</a> guys. In a couple of quick steps you can setup an Xcode project to use:</p>
+
+<ul>
+<li>4 spaces indentation level</li>
+<li>warning treated as errors</li>
+<li>Static Analysis</li>
+<li>TODO and FIXME treated as warnings</li>
+<li>a precompiled .gitignore and .gitattributes.</li>
+</ul>
+
+
+<p>It also can be used to create a brand new project, reducing the time spent reorganizing stuff to match the common (sense) conventions.<br/>
+Using it is easy as pie:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install liftoff
+</span><span class='line'>liftoff</span></code></pre></td></tr></table></div></figure></notextile></div>
+That&rsquo;s it.</p>
+
+<h4>Take off the boot(strap)s</h4>
+
+<p>That&rsquo;s unrelated to iOS per se, but since I found myself styling the landing page for <a href="http://memento.fancypixel.it">Memento: I know this place</a> I might as well spent a couple of lines on Pure.<br/>
+<a href="http://purecss.io/">Pure</a> is a pure css responsive web framework. It&rsquo;s unbelievably tiny, with a 4.5KB footprint, and also modular (so if you just need the grid system, you can just include that along with the base classes). If you have experience with Bootstrap or Zurb, you&rsquo;ll find yourself at home with their grid system and components. It can give a site a breath of fresh air. Checkout their <a href="http://purecss.io/layouts/">layout samples</a>.</p>
+
+<h4>My stuff</h4>
+
+<p>I try to keep myself busy in the iOS open-source community as well, so I&rsquo;ll sign off with the links of the new pods that I developed in the last two months, hoping that they might come in handy:</p>
+
+<ul>
+<li><a href="https://github.com/andreamazz/UIView-Shake">UIView+Shake</a>: UIView category that adds a shake animation like the password field of the OsX login screen.</li>
+<li><a href="https://github.com/andreamazz/UIView-draggable">UIView+draggable</a>: UIView category that adds dragging capabilities.</li>
+<li><a href="https://github.com/andreamazz/AMTagListView">AMTagListView</a>: UIScrollView subclass that allows to add a list of highly customizable tags.</li>
+<li><a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a>: Scrollable UINavigationBar that follows the scrolling of a UIScrollView, now updated to be integrated as a UIViewController&rsquo;s category.</li>
+</ul>
+
+
+<p>That&rsquo;s all for now.<br/>
+Cheers.
+Andrea</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AMScrollingNavbar: creating a cocoapod]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod/"/>
+    <updated>2014-02-01T12:07:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod</id>
+    <content type="html"><![CDATA[<p>This week <a href="https://twitter.com/mattt">Matt Thompson</a> published an interesting article on NSHipster, about <a href="http://nshipster.com/stewardship/">stewardship</a>, which is basically <em>the duty and ethic of public service</em>. Since I&rsquo;ve been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I&rsquo;m writing a new library for iOS. I&rsquo;ll be describing my work on <a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a> as an example.</p>
+
+<!-- More -->
+
+
+<p><code>AMScrollingNavbar</code> is a simple iOS library that lets you implement a <code>UINavigationBar</code> that scrolls out of the way when the user is scrolling the content of the app. You can observe this behavior in Google Chrome, Instagram or Facebook apps. I wanted to integrate something like that on one of the app I&rsquo;m working on, over at <a href="http://www.fancypixel.it">Fancy Pixel</a>, but couldn&rsquo;t find anything that did the job as I intended. What better motivation to do some OSS?</p>
+
+<h3>Writing the code</h3>
+
+<p>In cases like this, writing the code is more a series of trial and error, so instead of TDD I use a more <em>sample driven</em> approach. This means that I just fire up XCode, create a new project and start fiddling around with the SDK. That&rsquo;s the best part of the job.</p>
+
+<p>Letting the <code>UINavigationBar</code> scroll out of the way was fairly easy, I just needed to add a <code>UIGestureRecognizer</code> to the <code>UIScrollView</code> with the content.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIPanGestureRecognizer</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithTarget:</span><span class="n">self</span> <span class="nl">action:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">handlePan:</span><span class="p">)];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="nl">setMaximumNumberOfTouches:</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span> <span class="nl">setDelegate:</span><span class="n">self</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">addGestureRecognizer:</span><span class="n">self</span><span class="p">.</span><span class="n">panGesture</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>That alone won&rsquo;t do the trick though, we need to override a delegate method of the <code>UIGestureRecognizerDelegate</code> protocol:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nl">gestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">gestureRecognizer</span> <span class="nl">shouldRecognizeSimultaneouslyWithGestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">otherGestureRecognizer</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Returning <code>YES</code> in this method will allow both the scrollview and the gesture recognizer to work at the same time. Cool.
+Now it&rsquo;s time to stretch <code>UINavigationBar</code>&rsquo;s leg. Here&rsquo;s an abstract of the code that does that:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">scrollWithDelta:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="n">delta</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">CGRect</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="o">-</span><span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">delta</span> <span class="o">=</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">MAX</span><span class="p">(</span><span class="o">-</span><span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">,</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">);</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">[</span><span class="n">self</span> <span class="nl">updateSizingWithDelta:</span><span class="n">delta</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+As you can see the <code>UINavigationBar</code> has its own frame, that you can easily modify. Once I got the navigation bar following the scroll view, I needed to enlarge or reduce the scroll views' frame to leverage all the remaining screen estate. Big chunk of code coming up:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">updateSizingWithDelta:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="n">delta</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// At this point the navigation bar is already been placed in the right position, it&#39;ll be the reference point for the other views&#39;sizing</span>
+</span><span class='line'><span class="n">CGRect</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">[</span><span class="n">self</span> <span class="nl">updateNavbarAlpha:</span><span class="n">delta</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Move and expand (or shrink) the superview of the given scrollview</span>
+</span><span class='line'><span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">-=</span> <span class="n">delta</span><span class="p">;</span>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">+=</span> <span class="n">delta</span><span class="p">;</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">superview</span><span class="p">.</span><span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// if the scrolling view is a UIWebView, we need to adjust its scrollview&#39;s frame.</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIWebView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Keeps the view&#39;s scroll position steady until the navbar is gone</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIScrollView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[(</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">setContentOffset:</span><span class="n">CGPointMake</span><span class="p">(((</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">((</span><span class="n">UIScrollView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)];</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span> <span class="nl">isKindOfClass:</span><span class="p">[</span><span class="n">UIWebView</span> <span class="n">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span> <span class="nl">setContentOffset:</span><span class="n">CGPointMake</span><span class="p">(((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">((</span><span class="n">UIWebView</span><span class="o">*</span><span class="p">)</span><span class="n">self</span><span class="p">.</span><span class="n">scrollableView</span><span class="p">).</span><span class="n">scrollView</span><span class="p">.</span><span class="n">contentOffset</span><span class="p">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Fairly easy to read, kinda tricky to write. The scrollview&rsquo;s height is increased by the scroll&rsquo;s delta, and its origin is shifted up or down of the same amount. With a little reflection I can check wether the scroll view is a normal <code>UIScrollView</code> (and this includes table views) or a <code>UIWebView</code>. The later has its own scroll view, so I need to adjust that instead.<br/>
+With the view sizing complete, the last step was to fade out the navigation items. I used a hacky approach, since I wasn&rsquo;t able to set the alpha channel of every nav item, I figured I could just impose an overlay view with the same <code>barTintColor</code>, and change its alpha back and forth:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">updateNavbarAlpha:</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="n">delta</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">CGRect</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Change the alpha channel of every item on the navbr. The overlay will appear, while the other objects will disappear, and vice versa</span>
+</span><span class='line'><span class="kt">float</span> <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">frame</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">deltaLimit</span><span class="p">)</span> <span class="o">/</span> <span class="n">frame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span><span class="p">;</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">overlay</span> <span class="nl">setAlpha:</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">leftBarButtonItems</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIBarButtonItem</span><span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">obj</span><span class="p">.</span><span class="n">customView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">rightBarButtonItems</span> <span class="nl">enumerateObjectsUsingBlock:</span><span class="o">^</span><span class="p">(</span><span class="n">UIBarButtonItem</span><span class="o">*</span> <span class="n">obj</span><span class="p">,</span> <span class="n">NSUInteger</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">BOOL</span> <span class="o">*</span><span class="n">stop</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">obj</span><span class="p">.</span><span class="n">customView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">navigationItem</span><span class="p">.</span><span class="n">titleView</span><span class="p">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">;</span>
+</span><span class='line'><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">tintColor</span> <span class="o">=</span> <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">navigationController</span><span class="p">.</span><span class="n">navigationBar</span><span class="p">.</span><span class="n">tintColor</span> <span class="nl">colorWithAlphaComponent:</span><span class="n">alpha</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+And that did the trick.</p>
+
+<h3>Getting camera ready</h3>
+
+<p>Once the sample runs like I intended, I step in the refactoring phase. In this step I just take all the code and move it in a reusable object. In this case I opted for a <code>UIViewController</code> that can be subclassed by other developers. I valued the possibility of a category, but since I make an extensive use of instance variables, I preferred the first approach (not a fan of the <code>associatedObject</code> trick).<br/>
+The last item on the todo list is the refactoring of the sample project. And we&rsquo;re done.</p>
+
+<h3>Writing the documentation</h3>
+
+<p>An open source project is as good as its documentation is. It helps the first implementation by other devs, and most of all helps them decide wether to use your library or not. In some way it&rsquo;s marketing, without the <em>market</em> part.<br/>
+I like to spend some time to add comments following the <a href="http://nshipster.com/documentation/">Appledoc notation</a>. This will provide a comprehensive quick guide in XCode, and also will generate an Apple-like documentation in the <a href="http://cocoadocs.org/docsets/AMScrollingNavbar/0.5.4/Classes/AMScrollingCollectionViewController.html">Cocoapods pages</a>.
+As you can see the syntax is easy to write and to understand:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Scrolling</span> <span class="n">init</span> <span class="n">method</span>
+</span><span class='line'> <span class="o">*</span>
+</span><span class='line'> <span class="o">*</span> <span class="n">Enables</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">on</span> <span class="n">a</span> <span class="n">generic</span> <span class="n">UIView</span><span class="p">.</span>
+</span><span class='line'> <span class="o">*</span>
+</span><span class='line'> <span class="o">*</span> <span class="err">@</span><span class="n">param</span> <span class="n">scrollableView</span> <span class="n">The</span> <span class="n">UIView</span> <span class="n">where</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">is</span> <span class="n">performed</span><span class="p">.</span>
+</span><span class='line'> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+</span><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">followScrollView:</span><span class="p">(</span><span class="n">UIView</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">scrollableView</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Then it&rsquo;s time to push all the work on Github, and this calls for a good README file. The README should have a quick description of the library, the setup instructions, the library&rsquo;s documentation or a reference to it, and a screenshot, when possible.</p>
+
+<h4>Screenshot</h4>
+
+<p>Following the principle <em>&ldquo;show, don&rsquo;t tell&rdquo;</em>, screenshots work great, but GIFs are even better. Creating a GIF animation with your sample running is easy as pie, using <a href="http://www.cockos.com/licecap/">LICEcap</a>. Despite its weird name and lowres icon, LICEcap is an invaluable tool, easy to use and extremely versatile, you just fit the portion of the screen that you want to record inside its window, hit record, and you are done.</p>
+
+<p><img class="center" src="/images/posts/2014-02-01/licecap.png" title="&lsquo;LICEcap&rsquo;" ></p>
+
+<p>You might want to resize the output GIF, if you are capturing a big part of the screen, or if you are working on a retina display. <a href="http://www.imagemagick.org/script/index.php">ImageMagick</a> comes to the rescue:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>convert big.gif -coalesce temp.gif
+</span><span class='line'>convert -size 960x640 temp.gif -resize 480x320 small.gif</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>Travis CI</h3>
+
+<p><a href="https://travis-ci.org/">Travis CI</a> is a continuous integration tool, used to build and test projects hosted on Github. Having Travis enabled in an open source project is a great way to make sure that your project <em>compiles</em> fine. This is awesome for your new releases (you know before hand if your last commit broke something) and even better for pull requests, since Travis tells you wether a pull request compiles without errors, directly in the github page of the PR.<br/>
+To start using Travis, head <a href="https://travis-ci.org/">here</a>, login with Github, and enable your project from the list in your dashboard.<br/>
+Enabling Travis with iOS is really easy, it only takes two steps:</p>
+
+<h4>Configure build scheme</h4>
+
+<p>Open your sample project, or the project component that you want to build, and in the Manage Schemes panel, make sure that your project scheme is <code>Shared</code>:
+<img class="center" src="/images/posts/2014-02-01/schemes.png" title="&lsquo;Schemes&rsquo;" ></p>
+
+<h4>Add .travis.yml</h4>
+
+<p>Add a <code>.travis.yml</code> file in your project root. You&rsquo;ll be writing a simple script that will compile your sample project:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>language: objective-c
+</span><span class='line'>install:
+</span><span class='line'>&ndash; cd ScrollingNavbarDemo
+</span><span class='line'>script: xctool -project ScrollingNavbarDemo.xcodeproj -scheme &lsquo;ScrollingNavbarDemo&rsquo; -configuration Release -sdk iphonesimulator7.0 -arch i386 build</span></code></pre></td></tr></table></div></figure></notextile></div>
+The <code>install</code> phase just changes the directory to the one containing the project, then our trusty xctool compiles the project. Doesn&rsquo;t get much easier than that.</p>
+
+<p>Once you pushed the new release, the project will be added to the travis compile queue, and you&rsquo;ll receive an email with the result. You can also see the script running in real time, which is awesome.</p>
+
+<h3>Cocoapods</h3>
+
+<p>There is no need to reiterate that <a href="http://cocoapods.org/">Cocoapods</a> is <em>great</em>. The times when you spent precious time configuring a new library in your project are (<a href="/blog/2014/01/25/configuring-alljoyn-on-ios/">almost</a>) over. Creating a pod is a matter of minutes, and at the same times provides great value for the community.<br/>
+You&rsquo;ll find a pretty extensive guide on the <a href="http://guides.cocoapods.org/making/making-a-cocoapod.html">cocoapods site</a>.
+Here&rsquo;s what my podspec looks like:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="ss">Pod</span><span class="p">:</span><span class="ss">:Spec</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">s</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">name</span>         <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">AMScrollingNavbar</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">version</span>      <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">summary</span>      <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">Scrollable</span> <span class="no">UINavigationBar</span> <span class="n">that</span> <span class="n">follows</span> <span class="n">the</span> <span class="n">scrolling</span> <span class="n">of</span> <span class="n">a</span> <span class="no">UIScrollView</span><span class="o">.</span> <span class="no">Similiar</span> <span class="n">to</span> <span class="no">Chrome</span> <span class="k">for</span> <span class="n">iOS7</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">homepage</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;</span>
+</span><span class='line'><span class="sr">  s.license      = { :type =&gt; &amp;lsquo;MIT&amp;rsquo;, :file =&gt; &amp;lsquo;LICENSE&amp;rsquo; }</span>
+</span><span class='line'><span class="sr">  s.author       = { &amp;ldquo;Andrea Mazzini&amp;rdquo; =&gt; &amp;ldquo;&lt;a href=&quot;&amp;#109;&amp;#x61;&amp;#105;&amp;#108;&amp;#116;&amp;#x6f;&amp;#x3a;&amp;#97;&amp;#x6e;&amp;#100;&amp;#114;&amp;#x65;&amp;#97;&amp;#46;&amp;#x6d;&amp;#97;&amp;#122;&amp;#x7a;&amp;#105;&amp;#110;&amp;#x69;&amp;#64;&amp;#103;&amp;#x6d;&amp;#x61;&amp;#105;&amp;#108;&amp;#46;&amp;#x63;&amp;#x6f;&amp;#109;&quot;&gt;&amp;#x61;&amp;#110;&amp;#100;&amp;#x72;&amp;#x65;&amp;#x61;&amp;#x2e;&amp;#x6d;&amp;#x61;&amp;#x7a;&amp;#x7a;&amp;#105;&amp;#x6e;&amp;#x69;&amp;#x40;&amp;#x67;&amp;#109;&amp;#97;&amp;#105;&amp;#108;&amp;#46;&amp;#99;&amp;#111;&amp;#x6d;&lt;/</span><span class="n">a</span><span class="o">&gt;&amp;</span><span class="n">rdquo</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">source</span>       <span class="o">=</span> <span class="p">{</span> <span class="ss">:git</span> <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/andreamazz/AMScrollingNavbar.git&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">andreamazz</span><span class="o">/</span><span class="no">AMScrollingNavbar</span><span class="o">.</span><span class="n">git</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rdquo;, :tag =&gt; &amp;lsquo;0.5&amp;rsquo; }</span>
+</span><span class='line'><span class="sr">  s.platform     = :ios, &amp;lsquo;5.0&amp;rsquo;</span>
+</span><span class='line'><span class="sr">  s.source_files = &amp;lsquo;AMScrollingNavbar&amp;rsquo;, &amp;lsquo;*.{h,m}&amp;rsquo;</span>
+</span><span class='line'><span class="sr">  s.requires_arc = true</span>
+</span><span class='line'><span class="sr">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Once the spec is merged in the Spec repo, a new pod is born, and with it the documentation page is also generated.</p>
+
+<h4>Cocoacontrols</h4>
+
+<p><a href="https://www.cocoacontrols.com/">Cocoacontrols</a> is my favorite place to window shop for new libraries. As soon as my pod is ready and I feel that the README is comprehensive enough, I submit my control to cocoacontrols' review queue. It&rsquo;s a great way to get some visibility from fellow developers, and a great way to discover new controls. A big thanks to <a href="https://www.cocoacontrols.com/about">Aaron, Marine and Bob</a>.</p>
+
+<h3>Maintaining the code</h3>
+
+<p>Once the code is in the wild, it&rsquo;s time to maintain the code. This means answering questions about its use, fixing possible issues and merging the always welcome pull requests. It can become a job of its own at times, but it&rsquo;s a high reward task, since it gives you the chance to experiment more and improve your code quite a lot.<br/>
+The only tool that I use is the <code>Issue</code> section of github. I tried once to get into the habit of tracking the issues with <a href="https://waffle.io/">Waffle</a>, but in the end I never really used it efficiently.<br/>
+AMScrollingNavbar was well received, and has now (what is for me) a fair amount of stargazers on Github. I&rsquo;d like to thank all the contributors that helped to improve the library, introducing new features and fixing my missteps.</p>
+
+<p>That about wraps up this auto referential post.<br/>
+Until next time.<br/>
+Andrea</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Configuring Alljoyn on iOS]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/01/25/configuring-alljoyn-on-ios/"/>
+    <updated>2014-01-25T11:29:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/01/25/configuring-alljoyn-on-ios</id>
+    <content type="html"><![CDATA[<p>Have you ever played <a href="http://www.sleepingbeastgames.com/spaceteam/">Spaceteam</a> on <a href="https://play.google.com/store/apps/details?id=com.sleepingbeastgames.spaceteam">Android</a> or <a href="https://itunes.apple.com/it/app/spaceteam/id570510529?mt=8">iOS</a>? It&rsquo;s a local (cross-platform) multiplayer only game, based on a really cool concept. The players are&hellip; <em>you guessed it&hellip;</em> a space team, and they need to cooperate to keep the spaceship they are traveling on intact through space. This means that you&rsquo;ll be <a href="http://penny-arcade.com/comic/2012/12/31">shouting at your friends</a> commands, and activating various weirdly named knobs and switches.<br/>
+While I was researching the tech behind it, I stumbled upon <a href="https://www.alljoyn.org/">Alljoyn</a>, by Qualcomm.</p>
+
+<!-- More -->
+
+
+<p>Spaceteam uses <a href="https://github.com/tolo/HHServices">HHServices</a> and <a href="https://github.com/roustem/AsyncSocket">AsyncSocket</a>, so the networking protocol was built almost from the ground up by <a href="https://twitter.com/hengineer">its creator</a>. Alljoyn on the other hand promises an opensource <em>&ldquo;universal (cross-platform) software framework that enables interoperability among connected products and software applications across manufacturers to create dynamic proximal networks.&rdquo;</em> And I&rsquo;m all for that.<br/>
+The cool thing about it is its ability to seamlessly operate over wifi or over bluetooth (losing the cross-platform ability).
+If you login on the Alljoyn site you&rsquo;ll come across the free, opensource, SDK and a bunch of samples. I downloaded the iOS SDK, and started working on my sample.<br/>
+What I found out is that the walkthroughs and guides are either not up to date or just wrong. So I figured I could write down what I did to make everything work.<br/>
+In this day and age, where cocoapods eases our mind when we need to integrate a third party library, it was a harsh throwback in the world of missing headers and wrong architecture builds.</p>
+
+<h4>Compiling openssl</h4>
+
+<p>If you take a look at Alljoyn&rsquo;s SDK readme you&rsquo;ll notice that the first thing you need to do is compile Openssl for iOS. That&rsquo;s quite easy, and fairly well documented, just head to <a href="https://github.com/sqlcipher/openssl-xcode">Github and clone the openssl-xcode project</a>.<br/>
+As stated in the readme you need to download the <a href="http://www.openssl.org/source/">openssl sources</a> and place them in your openssl-xcode project.<br/>
+That&rsquo;s how the folder structure should look:</p>
+
+<p><img class="center" src="/images/posts/2014-01-25/openssl.png" width="760" height="550" title="&lsquo;openssl&rsquo;" ></p>
+
+<p>To compile it just open the .xcodeproj file and use XCode&rsquo;s Product &ndash;> Build For &ndash;> Release, or stay in your terminal window and compile it with xctool or xcodebuild, either:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>xcodebuild -project openssl.xcodeproj -scheme crypto</span></code></pre></td></tr></table></div></figure></notextile></div>
+or:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>xctool -project openssl.xcodeproj -scheme crypto</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>You&rsquo;ll find the built library in your derived data:</p>
+
+<p><img class="center" src="/images/posts/2014-01-25/derived-data.png" title="&lsquo;built openssl&rsquo;" ></p>
+
+<p>Just grab <code>Debug-iphoneos</code> and <code>Debug-iphonesimulator</code>, and place them under a <code>build</code> folder, inside your openssl sources. It should look something like this:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>☺   ~/openssl/build ll
+</span><span class='line'>drwxr-xr-x  5 Andrea  staff  170 21 Gen 23:26 Debug
+</span><span class='line'>drwxr-xr-x  5 Andrea  staff  170 21 Gen 23:28 Debug-iphoneos
+</span><span class='line'>drwxr-xr-x  5 Andrea  staff  170 21 Gen 23:28 Debug-iphonesimulator</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Cool, now download and unzip the Alljoyn&rsquo;s SDK.</p>
+
+<h4>New Alljoyn project</h4>
+
+<p>With that out of the way it&rsquo;s time to start working on our project. Fire up Xcode and create a new project.</p>
+
+<h5>Object Model</h5>
+
+<p>We&rsquo;ll start by creating the object that will travel the bus. Alljoyn uses its own XML format to define the object structure. I&rsquo;m not a fan of this format, but that&rsquo;s what we have to work with:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Object model </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="ni">&amp;lt;</span>?xml version=<span class="ni">&amp;ldquo;</span>1.0<span class="ni">&amp;rdquo;</span>?&gt;
+</span><span class='line'><span class="nt">&lt;xml&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;pre&gt;&lt;code&gt;</span><span class="ni">&amp;lt;</span>node name=&quot;org/alljoyn/Bus/sample&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;SampleObject&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>interface name=&quot;org.alljoyn.bus.sample&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>        <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;SampleObjectDelegate&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>        <span class="ni">&amp;lt;</span>method name=&quot;Concatentate&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>arg name=&quot;str1&quot; type=&quot;s&quot; direction=&quot;in&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>                <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;concatenateString:&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>/arg<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>arg name=&quot;str2&quot; type=&quot;s&quot; direction=&quot;in&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>                <span class="ni">&amp;lt;</span>annotation name=&quot;org.alljoyn.lang.objc&quot; value=&quot;withString:&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>/arg<span class="ni">&amp;gt;</span>
+</span><span class='line'>            <span class="ni">&amp;lt;</span>arg name=&quot;outStr&quot; type=&quot;s&quot; direction=&quot;out&quot;/<span class="ni">&amp;gt;</span>
+</span><span class='line'>        <span class="ni">&amp;lt;</span>/method<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>/interface<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="ni">&amp;lt;</span>/node<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="nt">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;p&gt;&lt;/xml&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This is the basic object that you&rsquo;ll find in the official guide, it defines a simple method that returns two input strings concatenated:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&ndash; (NSString&lt;em>)concatenateString:(NSString&lt;/em>)str1 withString:(NSString*)str2;</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Cool, now we should run the code generator bundled in the Alljoyn&rsquo;s SDK to generate the Objective-c code.
+The generator needs to be compiled, so we&rsquo;ll do that in a couple of clicks.</p>
+
+<h6>Compiling the generator</h6>
+
+<p>Building the generator is pretty straightforward, just head to <code>&lt;AllJoyn SDK Root&gt;/alljoyn_objc/AllJoynCodeGenerator</code> and build with XCode the AllJoynCodeGenerator.xcproj. This will create a /bin folder with the generator excecutable file.</p>
+
+<p>Now the good Alljoyn folks suggest to setup a new target that will allow us to generate with XCode the code. Since I like to keep my targets tidy, and since we have a perfectly fine console, I just skip this step and go the old fashioned way. Just copy the bin/AllJoynCodeGenerator wherever you like, as well with our trusty XML object, and run:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./AllJoynCodeGenerator sample_object.xml</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This will generate:</p>
+
+<pre><code>AJNSampleObject.h
+AJNSampleObject.mm
+SampleObject.h
+SampleObject.m
+</code></pre>
+
+<p>Copy these file to your project and add them to your target.</p>
+
+<h5>Build settings</h5>
+
+<p>Now the fun part. We&rsquo;ll need to configure the build settings of our project. What I really like to do is move the AllJoyn&rsquo;s SDK bins and openssl build in the project&rsquo;s root. Two reasons for that:</p>
+
+<ul>
+<li><p>I don&rsquo;t have to configure environment variables and link the relative paths</p></li>
+<li><p>The project is self contained, so everyone can just clone the project and compile it without firther hassles</p></li>
+</ul>
+
+
+<p>So, here&rsquo;s my folder structure:</p>
+
+<pre><code>☺   ~/code/git/alljoynsample ll
+drwxr-xr-x  16 Andrea  staff  544 25 Gen 15:14 AlljoynSample
+drwxr-xr-x   5 Andrea  staff  170 25 Gen 15:14 AlljoynSample.xcodeproj
+drwxr-xr-x   5 Andrea  staff  170 25 Gen 15:14 AlljoynSampleTests
+drwxr-xr-x   5 Andrea  staff  170 25 Gen 15:14 alljoyn-sdk
+drwxr-xr-x   4 Andrea  staff  136 25 Gen 15:14 openssl
+</code></pre>
+
+<p>Remmeber to remove the unused samples and openssl sources.</p>
+
+<p>Next step, head to your project&rsquo;s build settings tab, and set <code>Build Active Architecture Only</code> to YES.</p>
+
+<p>Below that field, look for <code>Other Linker Flags</code> and set it to <code>-lalljoyn -lajdaemon -lBundledDaemon.o -lssl -lcrypto</code>.</p>
+
+<p>That&rsquo;s where I needed to stop following the official guide, since the path described are wrong.
+Head to the <code>Header Search Paths</code> field and enter these:</p>
+
+<pre><code>$(inherited)
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+"$(SRCROOT)/alljoyn-sdk/alljoyn_core/build/darwin/arm/$(PLATFORM_NAME)/$(CONFIGURATION)/dist/cpp/inc"
+"$(SRCROOT)/alljoyn-sdk/alljoyn_core/build/darwin/arm/$(PLATFORM_NAME)/$(CONFIGURATION)/dist/cpp/inc/alljoyn"
+</code></pre>
+
+<p>Then in <code>Library Search Paths</code>:</p>
+
+<pre><code>$(inherited)
+"$(SRCROOT)/openssl/build/$(CONFIGURATION)-$(PLATFORM_NAME)"
+"$(SRCROOT)/alljoyn-sdk/alljoyn_core/build/darwin/$(CURRENT_ARCH)/$(PLATFORM_NAME)/$(CONFIGURATION)/dist/cpp/lib"
+</code></pre>
+
+<p>The $(CURRENT_ARCH) var was key to make the project compile on armv7s devices. That took a while to figure out.</p>
+
+<p>We can now get back to the official guide, setting <code>Enable C++ Exceptions</code> and <code>Enable C++ Runtime Types</code> to NO.</p>
+
+<p>Add <code>-DQCC_OS_GROUP_POSIX -DQCC_OS_DARWIN</code> to <em>Other C Flags</em> Debug and <code>-DNS_BLOCK_ASSERTIONS=1 -DQCC_OS_GROUP_POSIX -DQCC_OS_DARWIN</code> to <em>Other C Flags</em> Release.</p>
+
+<h6>Frameworks</h6>
+
+<p>Almost done. We need to take care of the frameworks. Just copy the <code>AllJoynFramework</code> folder from the Alljoyn&rsquo;s SDK in your folder and your project, and make sure to remove the <code>AJNPasswordManager</code> class or you won&rsquo;t be able to compile.
+Finish up by linking the static frameworks <code>SystemConfiguration</code> and <code>libstdc++.dylib</code> and we are done.</p>
+
+<p>Hit the trusty <code>⌘B</code> and you should see a succesful build.</p>
+
+<p>Well, that wasn&rsquo;t fun at all, and it sure made me appreciate Cocoapods even more.
+Hope this helps anyway.</p>
+
+<p>Until next time.<br/>
+Andrea</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Network Stubs with OHHTTPStubs]]></title>
+    <link href="http://andreamazz.github.io/blog/2014/01/10/network-stubs-with-ohhttpstubs/"/>
+    <updated>2014-01-10T19:42:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2014/01/10/network-stubs-with-ohhttpstubs</id>
+    <content type="html"><![CDATA[<p>This week I found myself implementing the Google Places' API in an iOS application, what better occasion to write a post about my favourite iOS stub framework, <a href="https://github.com/AliSoftware/OHHTTPStubs">OHHTTPStubs</a>?</p>
+
+<!-- More -->
+
+
+<h5>Network stubs</h5>
+
+<p>There are a lot of interesting <a href="http://martinfowler.com/articles/mocksArentStubs.html">articles</a> that explain the philosophy behind stubbing, mocking and their differences. I like the concise definition given by <a href="https://twitter.com/greggpollack">Gregg Pollack</a> in <a href="http://www.codeschool.com/courses/rails-testing-for-zombies">Codeschool&rsquo;s Rails Testing for Zombies</a>:
+<blockquote><p>Stubs replace a method with code that returns a specified result, mocks are stubs with an assertion that the method gets called.</p></blockquote>
+That being said, when testing network code, stubs are <em>really</em> useful tools to avoid hitting a network resource each time our tests run. This prevents unwanted traffic (and that&rsquo;s nice when you are dealing with API limits) and speeds up our test suite quite a bit.</p>
+
+<h5>Google Places API</h5>
+
+<p>I won&rsquo;t go further in detail with the Google Places' API, what we need to know is the API&rsquo;s URL and the format of returned JSON object.
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>API&rsquo;s URL </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;a href="https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=">https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=&lt;/a>&lt;your_api_key>&amp;location=&lt;lat,lng>&amp;sensor=true&amp;radius=500</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>debug_info: [ ],
+</span><span class='line'>html_attributions: [ ],
+</span><span class='line'>next_page_token: "ClRHAAAAFwvsXH5hYznZdQOQ61ZCp7gLZmcRVjy3l5OadZe4gdJNrrZb9xocYXTVHnSM3HKjQ41oBM0j7ImXN21Z6guuGMhpRg9fNOlZbN8vHPp1woYSEHZreMp6Y0xJxlpBYpbcslUaFIQravjfeq49dBvwPHGUQzsQwa9p",
+</span><span class='line'>results: [
+</span><span class='line'>    {
+</span><span class='line'>    geometry: {
+</span><span class='line'>        location: {
+</span><span class='line'>            lat: 37.7815533,
+</span><span class='line'>            lng: -122.4156427
+</span><span class='line'>        },
+</span><span class='line'>        viewport: {
+</span><span class='line'>            northeast: {
+</span><span class='line'>                lat: 37.7828015,
+</span><span class='line'>                lng: -122.4125167
+</span><span class='line'>            },
+</span><span class='line'>            southwest: {
+</span><span class='line'>                lat: 37.7741122,
+</span><span class='line'>                lng: -122.4222884
+</span><span class='line'>            }
+</span><span class='line'>        }
+</span><span class='line'>    },
+</span><span class='line'>    icon: "http://maps.gstatic.com/mapfiles/place_api/icons/geocode-71.png",
+</span><span class='line'>    id: "b7fa5ebba26a10513d18e1fd50628f082ffbd1a2",
+</span><span class='line'>    name: "Civic Center",
+</span><span class='line'>    reference: "CrQBoQAAAHvUxRoSt-y3wsF3Cr6JgGO5Y4Q8nWfthCZLFnApqPO9xmy1NnuQnaZ6BqqE9XPbx8rNKBF-IR7R8C8-8O90pkHjcmoUZKtZscZwbuTYa6RLO5ILIl34AGTh8lbB1cdPtt_NXbkQTQg8eiptx_gzYH8BKg8AKWhYFCN5u9xaE9lXENILw2Ngw_TaUoz1DAAwL6s7uLP3nTQIsO5tOVdsGh3dv2F4ZPck2dHBqD3gPHLSEhArD0KzT3KhPbFWq9UII33pGhSBLiwjfI7y3uOwGS8pkCskS6RK8Q",
+</span><span class='line'>    types: [
+</span><span class='line'>        "neighborhood",
+</span><span class='line'>        "political"
+</span><span class='line'>    ],
+</span><span class='line'>    vicinity: "San Francisco"
+</span><span class='line'>    }
+</span><span class='line'>]
+</span><span class='line'>status: "OK"
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>}</span></code></pre></td></tr></table></div></figure></notextile></div>
+Great, we have a lot of info, but I really need just <code>name</code> and <code>id</code> in this project.</p>
+
+<h5>Writing the test</h5>
+
+<p>Ok, we figured out how to ask Google for directions and we have our JSON response, next up is our test.</p>
+
+<p>In the last blog post I wrote about my iOS test configuration with Specta. In this project though I&rsquo;ll be using <a href="https://github.com/allending/Kiwi">Kiwi</a>, nothing mayor really changes, just the syntax.</p>
+
+<p>Here&rsquo;s the spec:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">describe</span><span class="p">(</span><span class="err">@</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="nl">fetchSuggestionsForLocation:onSuccess:</span><span class="n">onFailure</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">context</span><span class="p">(</span><span class="s">@&quot;with valid data&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">it</span><span class="p">(</span><span class="s">@&quot;returns an array&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">__block</span> <span class="n">NSArray</span><span class="o">*</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">AMPlacesHelper</span> <span class="n">sharedHelper</span><span class="p">]</span> <span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">){</span><span class="mf">37.7749295</span><span class="p">,</span><span class="o">-</span><span class="mf">122.4194155</span><span class="p">}</span> <span class="nl">onSuccess:</span><span class="o">^</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="nl">onFailure:</span><span class="o">^</span><span class="p">(</span><span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{}];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="nl">beKindOfClass:</span><span class="p">[</span><span class="n">NSArray</span> <span class="n">class</span><span class="p">]];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">theValue</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">count</span><span class="p">))</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="nl">beGreaterThan:</span><span class="n">theValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)];</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span><span class="p">(</span><span class="s">@&quot;returns a JSON array of places with a name and id&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">__block</span> <span class="n">NSArray</span><span class="o">*</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">AMPlacesHelper</span> <span class="n">sharedHelper</span><span class="p">]</span> <span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">){</span><span class="mf">37.7749295</span><span class="p">,</span><span class="o">-</span><span class="mf">122.4194155</span><span class="p">}</span> <span class="nl">onSuccess:</span><span class="o">^</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">result</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span> <span class="nl">onFailure:</span><span class="o">^</span><span class="p">(</span><span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{}];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">@&quot;name&quot;</span><span class="p">])</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="n">beNonNil</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">@&quot;id&quot;</span><span class="p">])</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="n">beNonNil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">context</span><span class="p">(</span><span class="s">@&quot;with invalid data&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">it</span><span class="p">(</span><span class="s">@&quot;returns an error in the failure block&quot;</span><span class="p">,</span> <span class="o">^</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">__block</span> <span class="n">NSError</span><span class="o">*</span> <span class="n">resultError</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">AMPlacesHelper</span> <span class="n">sharedHelper</span><span class="p">]</span> <span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">){</span><span class="mf">37.7749295</span><span class="p">,</span><span class="o">-</span><span class="mf">122.4194155</span><span class="p">}</span> <span class="nl">onSuccess:</span><span class="o">^</span><span class="p">(</span><span class="n">NSArray</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span> <span class="p">{}</span> <span class="nl">onFailure:</span><span class="o">^</span><span class="p">(</span><span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">resultError</span> <span class="o">=</span> <span class="n">error</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}];</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">expectFutureValue</span><span class="p">(</span><span class="n">resultError</span><span class="p">)</span> <span class="n">shouldEventually</span><span class="p">]</span> <span class="n">beNonNil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Pretty basic stuff, the first test checks that the returned object is an <code>NSArray</code>, and that its content&rsquo;s lenght is greater than 0. The second test checks for the content itself, making sure that <code>id</code> and <code>name</code> are present. The last spec just checks against invalid data, making sure that an error is raised. <code>expectFutureValue</code> waits 1 seconds (by default) before raising the expectation. This is key when dealing with asyncronous calls.</p>
+
+<p>You may point out that it&rsquo;s always a good practice to limit expectations to one per spec, but since these are pretty basic, I figured I could get away with squeezing two of them in the same spec.</p>
+
+<p>Running the test with my trusty xctool script, I see 3 red specs, yay!</p>
+
+<h5>Stubbing the network</h5>
+
+<p>Now we could implement our code and run the test again, hoping for green, but once we manage to make the network call, we&rsquo;ll be hitting the Google Places' API once for every test run. That&rsquo;s bad, so here enters <a href="https://github.com/AliSoftware/OHHTTPStubs">OHHTTPStubs</a>.</p>
+
+<p>OHHTTPStubs is pretty cool, it lets you register a stub that will listen for any network request and respond with a preset response body and response code. This means that we can easily emulate the network API&rsquo;s behaviour and use it to our likings.
+The basic structure of a stub is this one:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="nl">stubRequestsPassingTest:</span><span class="o">^</span><span class="kt">BOOL</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// Here you can decide whether to stub the request or not, based for example on the request URL</span>
+</span><span class='line'><span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span> <span class="nl">withStubResponse:</span><span class="o">^</span><span class="n">OHHTTPStubsResponse</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">// Here you return the fake data from your stubbed network call</span>
+</span><span class='line'><span class="k">return</span> <span class="p">[</span><span class="n">OHHTTPStubsResponse</span> <span class="nl">responseWithJSONObject:</span><span class="err">@</span><span class="p">[</span> <span class="s">@&quot;hello&quot;</span> <span class="p">]</span> <span class="nl">statusCode:</span><span class="mi">200</span> <span class="nl">headers:</span><span class="err">@</span><span class="p">{</span><span class="s">@&quot;Content-Type&quot;</span><span class="o">:</span> <span class="s">@&quot;application/json&quot;</span><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}];</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+Pretty nifty. Once we described our test we can then tear down the stubs in an <code>afterAll</code> block:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">afterAll</span><span class="p">(</span><span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="n">removeAllStubs</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h5>Our fixture</h5>
+
+<p>Since I want to stub the Google Places' API I need to provide a sort of fixture throught OHHTTPStubs. Let&rsquo;s <code>curl</code> the result, and save it to a JSON file that will be served by the stub.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl &lt;a href="https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=">https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=&lt;/a>&lt;your_api_key>&amp;location=&lt;lat,lng>&amp;sensor=true&amp;radius=500 > google_places.json</span></code></pre></td></tr></table></div></figure></notextile></div>
+Let&rsquo;s put this file in the test bundle of our iOS application and write the stub for the context <code>with valid data</code>:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">beforeEach</span><span class="p">(</span><span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="nl">stubRequestsPassingTest:</span><span class="o">^</span><span class="kt">BOOL</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="nl">withStubResponse:</span><span class="o">^</span><span class="n">OHHTTPStubsResponse</span><span class="o">*</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">NSBundle</span> <span class="o">*</span><span class="n">bundle</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSBundle</span> <span class="nl">bundleForClass:</span><span class="p">[</span><span class="n">self</span> <span class="n">class</span><span class="p">]];</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="n">OHHTTPStubsResponse</span> <span class="nl">responseWithFileAtPath:</span><span class="p">[</span><span class="n">bundle</span> <span class="nl">pathForResource:</span><span class="s">@&quot;google_places&quot;</span> <span class="nl">ofType:</span><span class="s">@&quot;json&quot;</span><span class="p">]</span>
+</span><span class='line'>                                            <span class="nl">statusCode:</span><span class="mi">200</span>
+</span><span class='line'>                                               <span class="nl">headers:</span><span class="err">@</span><span class="p">{</span><span class="s">@&quot;Content-Type&quot;</span><span class="o">:</span> <span class="s">@&quot;application/json&quot;</span><span class="p">}];</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And for the context <code>with invalid data</code>:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">beforeEach</span><span class="p">(</span><span class="o">^</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[</span><span class="n">OHHTTPStubs</span> <span class="nl">stubRequestsPassingTest:</span><span class="o">^</span><span class="kt">BOOL</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="nl">withStubResponse:</span><span class="o">^</span><span class="n">OHHTTPStubsResponse</span><span class="o">*</span><span class="p">(</span><span class="n">NSURLRequest</span> <span class="o">*</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="n">OHHTTPStubsResponse</span> <span class="nl">responseWithData:</span><span class="nb">nil</span> <span class="nl">statusCode:</span><span class="mi">500</span> <span class="nl">headers:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We should be set, let&rsquo;s make sure that our test fail in a meaningful way:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;blockquote>&lt;p>xctool -workspace Project.xcworkspace -scheme &lsquo;Project&rsquo; -sdk iphonesimulator test
+</span><span class='line'>&hellip;
+</span><span class='line'>&lsquo;AMPlacesHelper, fetchSuggestionsForLocation：onSuccess：onFailure, with valid data, returns an array&rsquo; [FAILED], expected subject to be kind of NSArray, got (null)
+</span><span class='line'>&lsquo;AMPlacesHelper, fetchSuggestionsForLocation：onSuccess：onFailure, with valid data, returns a JSON array of places with a name and id&rsquo; [FAILED], expected subject not to be nil
+</span><span class='line'>&lsquo;AMPlacesHelper, fetchSuggestionsForLocation：onSuccess：onFailure, with invalid data, returns an error in the failure block&rsquo; [FAILED], expected subject not to be nil</span></code></pre></td></tr></table></div></figure></notextile></div>
+Nice! We can now implement the code that will let the test pass, but won&rsquo;t hit the network.</p></blockquote>
+
+<h5>From red to green</h5>
+
+<p>Let&rsquo;s implement the code that will pass our test. As always, I used <a href="https://github.com/AFNetworking/AFNetworking">AFNetworking</a> to do a quick GET request to the aforementioned API.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">fetchSuggestionsForLocation:</span><span class="p">(</span><span class="n">CLLocationCoordinate2D</span><span class="p">)</span><span class="n">coordinates</span> <span class="nl">onSuccess:</span><span class="p">(</span><span class="kt">void</span><span class="p">(</span><span class="o">^</span><span class="p">)(</span><span class="n">NSArray</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">data</span><span class="p">))</span><span class="n">success</span> <span class="nl">onFailure:</span><span class="p">(</span><span class="kt">void</span><span class="p">(</span><span class="o">^</span><span class="p">)(</span><span class="n">NSError</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">error</span><span class="p">))</span><span class="n">failure</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">setNetworkActivityIndicatorVisible:</span><span class="n">YES</span><span class="p">];</span>
+</span><span class='line'><span class="n">AFHTTPRequestOperationManager</span> <span class="o">*</span><span class="n">manager</span> <span class="o">=</span> <span class="p">[</span><span class="n">AFHTTPRequestOperationManager</span> <span class="n">manager</span><span class="p">];</span>
+</span><span class='line'><span class="n">NSDictionary</span><span class="o">*</span> <span class="n">params</span> <span class="o">=</span> <span class="err">@</span><span class="p">{</span><span class="s">@&quot;key&quot;</span><span class="o">:</span> <span class="n">kGooglePlacesKey</span><span class="p">,</span>
+</span><span class='line'>                         <span class="s">@&quot;location&quot;</span><span class="o">:</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;%f,%f&quot;</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">.</span><span class="n">latitude</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">.</span><span class="n">longitude</span><span class="p">],</span>
+</span><span class='line'>                         <span class="s">@&quot;sensor&quot;</span><span class="o">:</span> <span class="s">@&quot;true&quot;</span><span class="p">,</span>
+</span><span class='line'>                         <span class="s">@&quot;radius&quot;</span><span class="o">:</span> <span class="s">@&quot;500&quot;</span><span class="p">};</span>
+</span><span class='line'><span class="p">[</span><span class="n">manager</span> <span class="nl">GET:</span><span class="n">kGooglePlacesURL</span> <span class="nl">parameters:</span><span class="n">params</span> <span class="nl">success:</span><span class="o">^</span><span class="p">(</span><span class="n">AFHTTPRequestOperation</span> <span class="o">*</span><span class="n">operation</span><span class="p">,</span> <span class="kt">id</span> <span class="n">responseObject</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">setNetworkActivityIndicatorVisible:</span><span class="n">NO</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">success</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">success</span><span class="p">(</span><span class="n">responseObject</span><span class="p">[</span><span class="s">@&quot;results&quot;</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span> <span class="nl">failure:</span><span class="o">^</span><span class="p">(</span><span class="n">AFHTTPRequestOperation</span> <span class="o">*</span><span class="n">operation</span><span class="p">,</span> <span class="n">NSError</span> <span class="o">*</span><span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span> <span class="nl">setNetworkActivityIndicatorVisible:</span><span class="n">NO</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">failure</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">failure</span><span class="p">(</span><span class="n">error</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">failure</span><span class="p">([[</span><span class="n">NSError</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithDomain:</span><span class="s">@&quot;googleapi.com&quot;</span> <span class="nl">code:</span><span class="mi">500</span> <span class="nl">userInfo:</span><span class="err">@</span><span class="p">{</span><span class="s">@&quot;message&quot;</span><span class="o">:</span> <span class="s">@&quot;unable to retrieve places&quot;</span><span class="p">}]);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We run our suite again:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;strong> TEST PASSED: 3 passed, 0 failed, 0 errored, 3 total &lt;/strong></span></code></pre></td></tr></table></div></figure></notextile></div>
+We&rsquo;re green. We can turn off Wifi and unplug the ethernet cable, the test will pass anyway.</p>
+
+<p>If we want to test the code with the live feed, we can easily switch the return value for <code>stubRequestsPassingTest</code> in our stubs to <code>NO</code>.</p>
+
+<h5>Debugging stubs</h5>
+
+<p>When using OHHTTPStubs there&rsquo;s one caveat&hellip;</p>
+
+<p>While writing the stub, I did manage to sneak a typo in my stub code, so I was trying to load <code>google.places.json</code> instead of <code>google_places.json</code>. Usually you&rsquo;d find this error pretty easilly, but this time I only noticed that every stubbed spec that was previously green, now was failing with this generic error:
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Test did not run: the test bundle stopped running or crashed in AMPlacesHelper_FetchSuggestionsForLocationonSuccessonFailure_WithValidData_ReturnsAnArray</span></code></pre></td></tr></table></div></figure></notextile></div>
+This can be annoying to debug if you have complex stub and I didn&rsquo;t find any quick solution, beside being careful when writing the stub implementation. I guess that a good rule of thumb here is:
+<blockquote><p>keep your stubs as simple as possible</p></blockquote>
+This should really apply to every good stub and mock.</p>
+
+<p>Until next time.<br/>
+Andrea</p>
+]]></content>
+  </entry>
+  
+</feed>
