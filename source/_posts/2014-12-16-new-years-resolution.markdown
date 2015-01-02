@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "New Year's Resolution: design an icon a day"
+title: "Designing an icon a day"
 date: 2014-12-16 14:42
 comments: true
 categories: sketch 
