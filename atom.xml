@@ -4,7 +4,7 @@
   <title><![CDATA[Syntax Error]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2015-01-02T10:27:51+01:00</updated>
+  <updated>2015-01-07T16:56:47+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -12,6 +12,19 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Designing an Icon a Day: Week 1]]></title>
+    <link href="http://andreamazz.github.io/blog/2015/01/07/designing-an-icon-a-day-week-1/"/>
+    <updated>2015-01-07T16:34:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2015/01/07/designing-an-icon-a-day-week-1</id>
+    <content type="html"><![CDATA[<p>Week 1 over of this challenge. So far so good, the commitment required seems bearable, and to be honest it&rsquo;s a great way to take the mind off the other stuff.
+I&rsquo;m still not sure about the general style of the icons though. So far I opted for large icons, with a fair amount of details, outlined with two possible stroke widths (4px and 2px). I&rsquo;m not sure about this, they might look good on a landing page or a dashboard, but they&rsquo;ll probably look off on a smaller scale in an app.<br/>
+I&rsquo;m probably going to switch style the next month or further up down the road, but for now, they&rsquo;ll do.</p>
+
+<p>Until next time</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Designing an icon a day]]></title>
