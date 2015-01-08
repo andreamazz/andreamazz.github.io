@@ -4,11 +4,11 @@
   <title><![CDATA[Syntax Error]]></title>
   <link href="http://andreamazz.github.io/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2015-01-07T16:56:47+01:00</updated>
+  <updated>2015-01-08T11:35:46+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
-    <email><![CDATA[andrea.mazzini@gmail.com]]></email>
+    <email><![CDATA[andrea@fancypixel.it]]></email>
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
@@ -27,7 +27,7 @@ I&rsquo;m probably going to switch style the next month or further up down the r
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Designing an icon a day]]></title>
+    <title type="html"><![CDATA[Designing an Icon a Day]]></title>
     <link href="http://andreamazz.github.io/blog/2014/12/16/new-years-resolution/"/>
     <updated>2014-12-16T14:42:00+01:00</updated>
     <id>http://andreamazz.github.io/blog/2014/12/16/new-years-resolution</id>
@@ -55,7 +55,7 @@ The fun starts on January 1 2015. Future-me will hopefully stop this project on 
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Fun with iBeacon]]></title>
+    <title type="html"><![CDATA[Fun With iBeacon]]></title>
     <link href="http://andreamazz.github.io/blog/2014/07/01/fun-with-ibeacon/"/>
     <updated>2014-07-01T20:47:00+02:00</updated>
     <id>http://andreamazz.github.io/blog/2014/07/01/fun-with-ibeacon</id>
@@ -774,7 +774,7 @@ You can find the source <a href="https://github.com/andreamazz/AMWaveTransition"
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Hey iOS, I like you, we should be friends]]></title>
+    <title type="html"><![CDATA[Hey iOS, I Like You, We Should Be Friends]]></title>
     <link href="http://andreamazz.github.io/blog/2014/03/10/hey-ios/"/>
     <updated>2014-03-10T19:30:00+01:00</updated>
     <id>http://andreamazz.github.io/blog/2014/03/10/hey-ios</id>
@@ -860,7 +860,7 @@ Andrea</p>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[AMScrollingNavbar: creating a cocoapod]]></title>
+    <title type="html"><![CDATA[AMScrollingNavbar: Creating a Cocoapod]]></title>
     <link href="http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod/"/>
     <updated>2014-02-01T12:07:00+01:00</updated>
     <id>http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod</id>
@@ -1362,7 +1362,7 @@ Andrea</p>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Network Stubs with OHHTTPStubs]]></title>
+    <title type="html"><![CDATA[Network Stubs With OHHTTPStubs]]></title>
     <link href="http://andreamazz.github.io/blog/2014/01/10/network-stubs-with-ohhttpstubs/"/>
     <updated>2014-01-10T19:42:00+01:00</updated>
     <id>http://andreamazz.github.io/blog/2014/01/10/network-stubs-with-ohhttpstubs</id>
@@ -1895,7 +1895,7 @@ Until next time.</p>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Rails Test setup]]></title>
+    <title type="html"><![CDATA[Rails Test Setup]]></title>
     <link href="http://andreamazz.github.io/blog/2014/01/05/rails-test-setup/"/>
     <updated>2014-01-05T19:20:00+01:00</updated>
     <id>http://andreamazz.github.io/blog/2014/01/05/rails-test-setup</id>
@@ -2102,7 +2102,7 @@ First of all, let&rsquo;s setup <a href="https://github.com/guard/guard">Guard</
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Open for business]]></title>
+    <title type="html"><![CDATA[Open for Business]]></title>
     <link href="http://andreamazz.github.io/blog/2013/11/10/open-for-business/"/>
     <updated>2013-11-10T18:55:00+01:00</updated>
     <id>http://andreamazz.github.io/blog/2013/11/10/open-for-business</id>

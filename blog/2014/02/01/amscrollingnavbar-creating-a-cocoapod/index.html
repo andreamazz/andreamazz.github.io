@@ -1,85 +1,88 @@
 
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
-	<meta charset="utf-8">
-	<title>AMScrollingNavbar: creating a cocoapod - Syntax Error</title>
-	<meta name="author" content="Andrea Mazzini">
+  <meta charset="utf-8">
+  <title>AMScrollingNavbar: Creating a Cocoapod - Syntax Error</title>
+  <meta name="author" content="Andrea Mazzini">
 
-	
-	<meta name="description" content="This week Matt Thompson published an interesting article on NSHipster, about stewardship, which is basically the duty and ethic of public service. &hellip;">
-	
-	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="description" content="AMScrollingNavbar: Creating a Cocoapod written Feb 1st, 2014 in cocoapods, ios, objc This week Matt Thompson published an interesting article on &hellip;">
+  
 
-	<link href="" rel="alternate" title="Syntax Error" type="application/atom+xml">
-	<link rel="canonical" href="">
-	<link href="/favicon.png" rel="shortcut icon">
-	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-	
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://andreamazz.github.io/blog/2014/02/01/amscrollingnavbar-creating-a-cocoapod">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="" rel="alternate" title="Syntax Error" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-42282237-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
 </head>
 
+  <body>
+    <a href="/" class="home-icon">
+      <img src="/images/home.png"/>
+    </a>
 
-<body>
-	<header id="header" class="inner"><h1><a href="/">Syntax Error</a></h1>
-<nav id="main-nav"><ul class="main">
-	<li><a href="/">Blog</a></li>
-	<li><a href="/blog/archives">Archives</a></li>
-</ul>
-</nav>
-<nav id="mobile-nav">
-	<div class="alignleft menu">
-		<a class="button">Menu</a>
-		<div class="container"><ul class="main">
-	<li><a href="/">Blog</a></li>
-	<li><a href="/blog/archives">Archives</a></li>
-</ul>
-</div>
-	</div>
-	<div class="alignright search">
-		<a class="button"></a>
-		<div class="container">
-			<form action="http://google.com/search" method="get">
-				<input type="text" name="q" results="0">
-				<input type="hidden" name="q" value="site:andreamazz.github.io">
-			</form>
-		</div>
-	</div>
-</nav>
-<nav id="sub-nav" class="alignright">
-	<div class="social">
-		
-		
-		<a class="google" href="https://plus.google.com/+AndreaMazzini?rel=author" title="Google+">Google+</a>
-		
-		
-		<a class="twitter" href="http://twitter.com/theandreamazz" title="Twitter">Twitter</a>
-		
-		
-		<a class="github" href="https://github.com/andreamazz" title="GitHub">GitHub</a>
-		
-    
-		
-		
-		
-		
-		
-    
-	</div>
-	<form class="search" action="http://google.com/search" method="get">
-		<input class="alignright" type="text" name="q" results="0">
-		<input type="hidden" name="q" value="site:andreamazz.github.io">
-	</form>
-</nav>
+    <article role="article" class="full-single-article">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        <h1>AMScrollingNavbar: Creating a Cocoapod</h1>
+        <div class="meta">
+          written 
 
-</header>
-	
-		
-	
-	<div id="content" class="inner"><article class="post">
-	<h2 class="title">AMScrollingNavbar: Creating a Cocoapod</h2>
-	<div class="entry-content"><p>This week <a href="https://twitter.com/mattt">Matt Thompson</a> published an interesting article on NSHipster, about <a href="http://nshipster.com/stewardship/">stewardship</a>, which is basically <em>the duty and ethic of public service</em>. Since I&rsquo;ve been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I&rsquo;m writing a new library for iOS. I&rsquo;ll be describing my work on <a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a> as an example.</p>
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-02-01T12:07:00+01:00" pubdate data-updated="true">Feb 1<span>st</span>, 2014</time>
+          
+
+in
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/cocoapods/'>cocoapods</a>, <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/objc/'>objc</a>
+  
+</span>
+
+
+        </div>
+        <p>This week <a href="https://twitter.com/mattt">Matt Thompson</a> published an interesting article on NSHipster, about <a href="http://nshipster.com/stewardship/">stewardship</a>, which is basically <em>the duty and ethic of public service</em>. Since I&rsquo;ve been trying to be more active in the open source community, I figured I could use this occasion to write an article with the process that I follow when I&rsquo;m writing a new library for iOS. I&rsquo;ll be describing my work on <a href="https://github.com/andreamazz/AMScrollingNavbar">AMScrollingNavbar</a> as an example.</p>
 
 <!-- More -->
 
@@ -378,73 +381,76 @@ AMScrollingNavbar was well received, and has now (what is for me) a fair amount 
 <p>That about wraps up this auto referential post.<br/>
 Until next time.<br/>
 Andrea</p>
+
+
+        <hr class="divider-short"/>
+
+        
+        <section>
+          <h1>Comments</h1>
+          <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </div>
-
-
-<div class="meta">
-	<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-01T12:07:00+01:00" pubdate data-updated="true">Feb 1<span>st</span>, 2014</time></div>
-	<div class="tags">
-
-
-	<a class='category' href='/blog/categories/cocoapods/'>cocoapods</a>, <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/objc/'>objc</a>
-
-
-</div>
-	
-	<div class="comments"><a href="#disqus_thread">Comments</a></div>
-	
-</div>
+        </section>
+        
+      </div>
+    </div>
+  </div>
 </article>
 
-	<div class="share">
-	<div class="addthis_toolbox addthis_default_style ">
-		
-		<a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
-		
-		
-		<a class="addthis_button_tweet"></a>
-		
-		
-		<a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
-		
-		
-	</div>
-	
+<hr class="divider-short"/>
+
+<div class="archive-link">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        
+          <a class="pull-left" href="/blog/2014/01/25/configuring-alljoyn-on-ios/" title="Previous Post: Configuring Alljoyn on iOS">&laquo; Previous: Configuring Alljoyn on iOS</a>
+        
+
+        
+          <a class="pull-right" href="/blog/2014/03/10/hey-ios/" title="Next Post: Hey iOS, I like you, we should be friends">Next: Hey iOS, I like you, we should be friends &raquo;</a>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+    <footer id="footer" class="her-row">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-1">
+  <a href="/"><h4>Home</h4></a>
+</div>
+
+<div class="col-md-2">
+  <div class="social-icon-list">
+    
+    <a href="https://twitter.com/theandreamazz"><img src="/images/glyphicons_social_31_twitter.png"/></a>
+    
+
+    
+    <a href="https://github.com/andreamazz"><img src="/images/glyphicons_social_21_github.png"/></a>
+    
+
+    
+
+    
+    <a href="mailto:andrea@fancypixel.it"><img src="/images/glyphicons_social_39_e-mail.png"/></a>
+    
+  </div>
+</div>
+
+<div class="pull-right">
+  <h4>Powered by <a href="http://octopress.org/">Octopress</a>. Designed by <a href="http://AdrianArtiles.com">Adrian Artiles</a>.</h4>
 </div>
 
 
-
-<section id="comment">
-    <h2 class="title">Comments</h2>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-</div>
-</section>
-</div>
-	<footer id="footer" class="inner">Copyright &copy; 2015
-
-    Andrea Mazzini
-
+    </div>
+  </div>
 </footer>
-	<script src="/javascripts/slash.js"></script>
-<script src="/javascripts/jquery.fancybox.pack.js"></script>
-<script type="text/javascript">
-(function($){
-	$('.fancybox').fancybox();
-})(jQuery);
-</script> <!-- Delete or comment this line to disable Fancybox -->
 
+    
+      
 
 <script type="text/javascript">
       var disqus_shortname = 'uicode';
@@ -463,20 +469,6 @@ Andrea</p>
 </script>
 
 
-
-	<script type="text/javascript">
-		var _gaq = _gaq || [];
-		_gaq.push(['_setAccount', 'UA-42282237-7']);
-		_gaq.push(['_trackPageview']);
-
-		(function() {
-			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-		})();
-	</script>
-
-
-
-</body>
+    
+  </body>
 </html>
