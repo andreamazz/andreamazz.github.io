@@ -4,10 +4,10 @@
 
 url: http://andreamazz.github.io
 title: Syntax Error
-subtitle: "Random thoughts and snippets"
+subtitle: 
 author: Andrea Mazzini
 simple_search: http://google.com/search
-description: "A blog by a software engineer, movie nerd and gadget and gaming enthusiast"
+description: "I'm an iOS developer, but I also have a lot of fun working with Rails and designing with Sketch. You can find out more about my work here or on my Github page"
 
 # Default date format is "ordinal" (resulting in "July 22nd 2007")
 # You can customize the format as defined in
@@ -19,7 +19,7 @@ date_format: "ordinal"
 subscribe_rss:
 subscribe_email:
 # RSS feeds can list your email address if you like
-email: andrea.mazzini@gmail.com
+email: andrea@fancypixel.it
 
 # ----------------------- #
 #    Jekyll & Plugins     #
