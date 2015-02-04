@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rails | Syntax Error]]></title>
   <link href="http://andreamazz.github.io/blog/categories/rails/atom.xml" rel="self"/>
   <link href="http://andreamazz.github.io/"/>
-  <updated>2015-01-26T21:52:59+01:00</updated>
+  <updated>2015-02-04T11:03:00+01:00</updated>
   <id>http://andreamazz.github.io/</id>
   <author>
     <name><![CDATA[Andrea Mazzini]]></name>
@@ -12,6 +12,783 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API]]></title>
+    <link href="http://andreamazz.github.io/blog/2015/02/04/react-plus-flux-backed-by-rails-api/"/>
+    <updated>2015-02-04T11:01:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2015/02/04/react-plus-flux-backed-by-rails-api</id>
+    <content type="html"><![CDATA[<p>I’ve been working on a frontend for a project we are developing here at Fancy Pixel. We are embracing what looks like a good habit: slicing what would be a monolithic Rails app in a lightweight backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn’t. There’s something about it that doesn’t sit right with me, I wouldn’t go in detail, since many others already did, but let’s just say that there’s too much magic involved for my tastes (says the guy using Rails). Magic is fine as long as I can figure out how to tinker with the internals when things go down south. With Angular the effort seems too much, but that’s just personal taste really. Also I can’t deny that the major structural changes introduced in 2.0 were the last nail in the coffin.
+I wanted to try something new, something that would enforce a solid architecture of our apps, letting me control the single cogs in the engine. React got a lot of good press in the past months, so I took the chance to dive in. In this three-part post you’ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
+
+<p>Read the full article <a href="http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">here</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API - Part 2]]></title>
+    <link href="http://andreamazz.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/"/>
+    <updated>2015-01-29T10:31:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2</id>
+    <content type="html"><![CDATA[<p>This is the second part of &ldquo;React + Flux backed by Rails API&rdquo;, make sure to checkout Part 1.
+In part 1 we created our fancy Rails API, setup the authentication and defined a resource for our tiny clone of Medium.
+Time to reach the core of this post: the frontend.</p>
+
+<!-- More -->
+
+
+<h1>Settin up the frontend</h1>
+
+<p>The whole idea behind splitting the backend from the fronted is to treat the web UI as a first class citizen, sitting in its own folder, in its own repo, with no bindings from the backend. The backend can be easily interchanged, as long as the API specs remain consistent. So we&rsquo;ll create a new app from scratch. We have the option to use automated tools like Yeoman, but I wasn&rsquo;t able to find the solution that fit all my need.</p>
+
+<h2>Tools</h2>
+
+<p>I&rsquo;ll be using node&rsquo;s NPM to fetch the main tools, Gulp for the build and watch tasks, and Bower for the resources.
+Before diving in the details, I have to warn you, I&rsquo;m awful with gulp, I&rsquo;m still learning, so I pretty much gathered tasks around the web. So take my gulp file lightly, I&rsquo;m planning on fixing all the horrors as soon as I can.
+You&rsquo;ll find the package.sjon and gulpfile.js in the sample repo, to make a longstory short we&rsquo;ll be using React.js (obviously), react-router, superagent for the ajax calls and flux. As I said before, Flux is just an architecture, so what am I importing really in my package.json? Turns out that Facebook release a small library called flux that contains basically the code for a Flux Dispatcher (more on that later), that will cut down the amoun of boilerplate code that we&rsquo;ll need to get started.</p>
+
+<h2>Flux Architecture</h2>
+
+<p>If you already took a stab at Flux you might know this diagram:
+<img class="center" src="/images/posts/2015-01-29/flux.png" width="640" height="320" title="&lsquo;Flux architecture&rsquo;" ></p>
+
+<p>It might not be easy to understand at first, but it makes more and more sense while you are implementing all those coloured blocks. Let me shed some light over it.
+The leftmost block is our Web API, we built that in the previous part of this blog post, so we are set. Our API will be called by the &ldquo;Web API Utils&rdquo;, that&rsquo;s just a plain JS file making ajax requests. Eventually this JS component will receive an AJAX callback, and needs to update our frontend app. It does that using Actions. An action is just a data sctructure that tells the system what happened and what payload is associated with that action.
+There are two types of actions: the one initiaded by a server (e.g.: an AJAX callback) and those initiated by the views (e.g.: the user click a button).
+The actions are created through Action Creators, that are really just utility functions that build the action and toss it to the system, or to be more precise, the dispatcher.
+the dispatcher is a single object (one per app) that, as the name suggests, dispatches actions to those who registered interest in them. It&rsquo;s just a pub-sub mechanism, plain and simple.
+The object that register interest in this actions are called Stores. Stores contain the applciation logic and state. They are similar to a model, but they manage the state of all the objects, not a single record.
+Stores are the one offering the state that will be presented by the React views. React views should hold as few state as possible, they should grab the state of the data from a store, and pass the state to their children as props.
+That&rsquo;s it really, it seems rather convoluted at first, but an example can clear the fog, let&rsquo;s consider the login process:</p>
+
+<ul>
+<li>The user enters his username and password, and clicks Login</li>
+<li>The React view handles the click event, grabs the content of the fields and creates an action through an action creator, with the tag <code>LOGIN_REQUEST</code> and a payload with the user&rsquo;s credentials</li>
+<li>The Action creator creates the <code>LOGIN_REQUEST</code> with its payload, and alerts the Dispatcher</li>
+<li>The Action creator also calls the Web API utils, passing the payload</li>
+<li>The Web API Utils perform the AJAX call</li>
+<li>The Web API responds authenticating the user, providing the repsonse JSON</li>
+<li>The Web API Utils receive the JSON and creates a new action, called LOGIN_RESPONSE, with the JSON as payload.</li>
+<li>The dispatcher is notified, and forwards the action to the store(s) that is(are) interesetd in a LOGIN_RESPONSE</li>
+<li>The store (e.g.: a SessionStore) gets notified and extracts the payload from the action</li>
+<li>The store updates its state (username, auth token and login state set to true)</li>
+<li>The store emits its changes</li>
+<li>The React views are notified of the changes</li>
+<li>The React views can grab the state from the store, and if needed pass the state to their children</li>
+</ul>
+
+
+<p>And that&rsquo;s it. Looks like a lot of work for a simple login, but this pattern can be applied to every action performed by the user or the server. It keeps the main components decoupled, it&rsquo;s easier to maintain, and best of all, everything is tidy, for once.</p>
+
+<p>Ok, that was a mouthful, let&rsquo;s see some code.</p>
+
+<h1>Project stucture</h1>
+
+<p>We&rsquo;ll start with the project structure.
+<code>
+aa.jsx
+</code>
+app.jsx will be our mounting point, it will render the app in our html template, nothing fancy:
+```javascript
+var React = require(&lsquo;react&rsquo;);
+var router = require(&lsquo;./stores/RouteStore.react.jsx&rsquo;).getRouter();
+window.React = React;</p>
+
+<p>router.run(function (Handler, state) {
+  React.render(<Handler/>, document.getElementById(&lsquo;content&rsquo;));
+});
+```
+That&rsquo;s our first taste of React and JSX. JSX is a JS extension that lets us write nodes with a syntax similiar to XML. It&rsquo;s optional, but it cleans up the syntax and can be handled with ease by designers.</p>
+
+<h2>Routes</h2>
+
+<p><code>router.jsx</code> holds all of our routes that will be used to instantiate react-router:
+```javascript
+var React = require(&lsquo;react&rsquo;);
+var Router = require(&lsquo;react-router&rsquo;);
+var Route = Router.Route;
+var DefaultRoute = Router.DefaultRoute;</p>
+
+<p>var SmallApp = require(&lsquo;./components/SmallApp.react.jsx&rsquo;);
+var LoginPage = require(&lsquo;./components/session/LoginPage.react.jsx&rsquo;);
+var StoriesPage = require(&lsquo;./components/stories/StoriesPage.react.jsx&rsquo;);
+var StoryNew = require(&lsquo;./components/stories/StoryNew.react.jsx&rsquo;);
+var SignupPage = require(&lsquo;./components/session/SignupPage.react.jsx&rsquo;);</p>
+
+<p>module.exports = (
+  <Route name="app" path="/" handler={SmallApp}></p>
+
+<pre><code>&lt;DefaultRoute handler={StoriesPage} /&gt;
+&lt;Route name="login" path="/login" handler={LoginPage}/&gt;
+&lt;Route name="signup" path="/signup" handler={SignupPage}/&gt;
+&lt;Route name="stories" path="/stories" handler={StoriesPage}&gt;
+  &lt;Route name="new-story" path="/stories/new" handler={StoryNew}/&gt;
+&lt;/Route&gt;
+</code></pre>
+
+<p>  </Route>
+);
+```
+Routes are expressed in JSX syntax, we can specify a name (that will be used to perform transitions and to create links), an handler (the React component that will be mounted when the route is visited) and an optional path (that the user will see in his address bar). As you can see we can also mount routes inside another route in a RESTful way.</p>
+
+<h2>Dispatcher</h2>
+
+<p>The dispatcher is the core of the app really, it&rsquo;s the central hub for our messages (actions). It&rsquo;s also a failry easy component to implement, it&rsquo;s really just boilerplate code:
+```javascript
+var SmallConstants = require(&lsquo;../constants/SmallConstants.js&rsquo;);
+var Dispatcher = require(&lsquo;flux&rsquo;).Dispatcher;
+var assign = require(&lsquo;object-assign&rsquo;);</p>
+
+<p>var PayloadSources = SmallConstants.PayloadSources;</p>
+
+<p>var SmallAppDispatcher = assign(new Dispatcher(), {</p>
+
+<p>  handleServerAction: function(action) {</p>
+
+<pre><code>var payload = {
+  source: PayloadSources.SERVER_ACTION,
+  action: action
+};
+this.dispatch(payload);
+</code></pre>
+
+<p>  },</p>
+
+<p>  handleViewAction: function(action) {</p>
+
+<pre><code>var payload = {
+  source: PayloadSources.VIEW_ACTION,
+  action: action
+};
+this.dispatch(payload);
+</code></pre>
+
+<p>  }
+});</p>
+
+<p>module.exports = SmallAppDispatcher;
+<code>
+We are basically defining two main methods that will be used to dispatch a message. We use two instead of one just for semantics: one will handle the dispatch of server-initiated action, the other one the view-initiated actions.  
+Beofre proceding to the meat of the implementation we'll take a look at the Constants file:
+</code>javascript
+var keyMirror = require(&lsquo;keymirror&rsquo;);</p>
+
+<p>var APIRoot = &ldquo;<a href="http://localhost:3000">http://localhost:3000</a>&rdquo;;</p>
+
+<p>module.exports = {</p>
+
+<p>  APIEndpoints: {</p>
+
+<pre><code>LOGIN:          APIRoot + "/v1/login",
+REGISTRATION:   APIRoot + "/v1/users",
+STORIES:        APIRoot + "/v1/stories"
+</code></pre>
+
+<p>  },</p>
+
+<p>  PayloadSources: keyMirror({</p>
+
+<pre><code>SERVER_ACTION: null,
+VIEW_ACTION: null
+</code></pre>
+
+<p>  }),</p>
+
+<p>  ActionTypes: keyMirror({</p>
+
+<pre><code>// Session
+LOGIN_REQUEST: null,
+LOGIN_RESPONSE: null,
+
+// Routes
+REDIRECT: null,
+
+LOAD_STORIES: null,
+RECEIVE_STORIES: null,
+CREATE_STORY: null,
+RECEIVE_CREATED_STORY: null
+</code></pre>
+
+<p>  })</p>
+
+<p>};
+```
+This is just an utility class that holds the constants that we&rsquo;ll use throughout the project, mainly the API endpoint and the types of action that we can perform in our app.
+Now, let&rsquo;s talk about the authentication process.</p>
+
+<h1>Authentication</h1>
+
+<p>As explained in the Flux example above, the data flow will be initiaded by the user, that will visit the login page, fill a form with his credentials and click on submit. We&rsquo;ll handle the submit as a <code>VIEW_ACTION</code>, this means that our view will just calla  method of our action creator for the session. Let&rsquo;s take a look at it:
+```javascript
+// ./scripts/actions/SessionActionCreators.react.jsx
+var SmallAppDispatcher = require(&lsquo;../dispatcher/SmallAppDispatcher.js&rsquo;);
+var SmallConstants = require(&lsquo;../constants/SmallConstants.js&rsquo;);
+var WebAPIUtils = require(&lsquo;../utils/WebAPIUtils.js&rsquo;);</p>
+
+<p>var ActionTypes = SmallConstants.ActionTypes;</p>
+
+<p>module.exports = {</p>
+
+<p>  signup: function(email, password, passwordConfirmation) {</p>
+
+<pre><code>SmallAppDispatcher.handleViewAction({
+  type: ActionTypes.SIGNUP_REQUEST,
+  email: email,
+  password: password,
+  passwordConfirmation: passwordConfirmation
+});
+WebAPIUtils.signup(email, password, passwordConfirmation);
+</code></pre>
+
+<p>  },</p>
+
+<p>  login: function(email, password) {</p>
+
+<pre><code>SmallAppDispatcher.handleViewAction({
+  type: ActionTypes.LOGIN_REQUEST,
+  email: email,
+  password: password
+});
+WebAPIUtils.login(email, password);
+</code></pre>
+
+<p>  },</p>
+
+<p>  logout: function() {</p>
+
+<pre><code>SmallAppDispatcher.handleViewAction({
+  type: ActionTypes.LOGOUT
+});
+</code></pre>
+
+<p>  }</p>
+
+<p>};
+<code>
+This cover all the user-initiaded action in the context of the session. The login action creator as you can see creates a new ViewAction, attaching a payload with the user's email and password, and then calls the WebAPIUtils.login method. If other components registered their interest in receiving the LOGIN_REQUEST action, the dispatcher would deliver this action right now.  
+The login method of our WebAPIUtils class is this:
+</code>javascript
+var ServerActionCreators = require(&lsquo;../actions/ServerActionCreators.react.jsx&rsquo;);
+var request = require(&lsquo;superagent&rsquo;);</p>
+
+<p>module.exports = {</p>
+
+<p>  login: function(email, password) {</p>
+
+<pre><code>request.post('http://localhost:3002/v1/login')
+  .send({ username: email, password: password, grant_type: 'password' })
+  .set('Accept', 'application/json')
+  .end(function(error, res){
+    if (res) {
+      if (res.error) {
+        var errorMsgs = _getErrors(res);
+        ServerActionCreators.receiveLogin(null, errorMsgs);
+      } else {
+        json = JSON.parse(res.text);
+        ServerActionCreators.receiveLogin(json, null);
+      }
+    }
+  });
+</code></pre>
+
+<p>  },
+  // &hellip;
+};
+<code>
+A common pattern should start to be apparent right now: no class is directly modifying the state of another, but they are just creating new actions. That's the Flux way of handling data in a nutshell.  
+To keep things tidy the actions for results of the login process are created in a separate actionc reator:
+</code>javascript
+// ./scripts/actions/ServerActionCreators.react.jsx
+var SmallAppDispatcher = require(&lsquo;../dispatcher/SmallAppDispatcher.js&rsquo;);
+var SmallConstants = require(&lsquo;../constants/SmallConstants.js&rsquo;);</p>
+
+<p>var ActionTypes = SmallConstants.ActionTypes;</p>
+
+<p>module.exports = {</p>
+
+<p>  receiveLogin: function(json, errors) {</p>
+
+<pre><code>SmallAppDispatcher.handleServerAction({
+  type: ActionTypes.LOGIN_RESPONSE,
+  json: json,
+  errors: errors
+});
+</code></pre>
+
+<p>  },</p>
+
+<p>  receiveStories: function(json) {</p>
+
+<pre><code>SmallAppDispatcher.handleServerAction({
+  type: ActionTypes.RECEIVE_STORIES,
+  json: json
+});
+</code></pre>
+
+<p>  },</p>
+
+<p>  receiveCreatedStory: function(json, errors) {</p>
+
+<pre><code>SmallAppDispatcher.handleServerAction({
+  type: ActionTypes.RECEIVE_CREATED_STORY,
+  json: json,
+  errors: errors
+});
+</code></pre>
+
+<p>  }</p>
+
+<p>};
+```
+And this covers the server and view actions for the login process. Who handles the result though? Let&rsquo;s talk about stores.</p>
+
+<h2>Sessionstore</h2>
+
+<p>Stores are like a mix between a model and a controller, they handle the data, the mains tate of the application, feeding the records to the views, while retrieving the data from a server. We are about to see the SessionStore, which keeps track of the current user (and holds his access token, used in the API calls) and listens for the LOGIN_RESPONSE action.
+```javascript
+var SmallAppDispatcher = require(&lsquo;../dispatcher/SmallAppDispatcher.js&rsquo;);
+var SmallConstants = require(&lsquo;../constants/SmallConstants.js&rsquo;);
+var EventEmitter = require(&lsquo;events&rsquo;).EventEmitter;
+var assign = require(&lsquo;object-assign&rsquo;);</p>
+
+<p>var ActionTypes = SmallConstants.ActionTypes;
+var CHANGE_EVENT = &lsquo;change&rsquo;;</p>
+
+<p>// Load an access token from the session storage, you might want to implement
+// a &lsquo;remember me&rsquo; using localSgorage
+var <em>accessToken = sessionStorage.getItem(&lsquo;accessToken&rsquo;)
+var </em>email = sessionStorage.getItem(&lsquo;email&rsquo;)
+var _errors = [];</p>
+
+<p>var SessionStore = assign({}, EventEmitter.prototype, {</p>
+
+<p>  emitChange: function() {</p>
+
+<pre><code>this.emit(CHANGE_EVENT);
+</code></pre>
+
+<p>  },</p>
+
+<p>  addChangeListener: function(callback) {</p>
+
+<pre><code>this.on(CHANGE_EVENT, callback);
+</code></pre>
+
+<p>  },</p>
+
+<p>  removeChangeListener: function(callback) {</p>
+
+<pre><code>this.removeListener(CHANGE_EVENT, callback);
+</code></pre>
+
+<p>  },</p>
+
+<p>  isLoggedIn: function() {</p>
+
+<pre><code>return _accessToken ? true : false;    
+</code></pre>
+
+<p>  },</p>
+
+<p>  getAccessToken: function() {</p>
+
+<pre><code>return _accessToken;
+</code></pre>
+
+<p>  },</p>
+
+<p>  getEmail: function() {</p>
+
+<pre><code>return _email;
+</code></pre>
+
+<p>  },</p>
+
+<p>  getErrors: function() {</p>
+
+<pre><code>return _errors;
+</code></pre>
+
+<p>  }</p>
+
+<p>});</p>
+
+<p>SessionStore.dispatchToken = SmallAppDispatcher.register(function(payload) {
+  var action = payload.action;</p>
+
+<p>  switch(action.type) {</p>
+
+<pre><code>case ActionTypes.LOGIN_RESPONSE:
+  if (action.json &amp;&amp; action.json.access_token) {
+    _accessToken = action.json.access_token;
+    _email = action.json.email;
+    // Token will always live in the session, so that the API can grab it with no hassle
+    sessionStorage.setItem('accessToken', _accessToken);
+    sessionStorage.setItem('email', _email);
+  }
+  if (action.errors) {
+    _errors = action.errors;
+  }
+  SessionStore.emitChange();
+  break;
+
+case ActionTypes.LOGOUT:
+  _accessToken = null;
+  _email = null;
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('email');
+  SessionStore.emitChange();
+  break;
+
+default:
+</code></pre>
+
+<p>  }</p>
+
+<p>  return true;
+});</p>
+
+<p>module.exports = SessionStore;
+```
+That looks like a bunch of code, but most of it is boilerplate, the interesting part is in the .register function. When the store receives the LOGIN_RESPONSE action unpacks the payload and checks wether the login was successfull or not. It then updates its state (that will be accessed by the public properties declared on top of the file) and notifies a change to whomever might be listening (that&rsquo;s why we import node&rsquo;s EventEmitter and merge the class with it).<br/>
+Ok, we have the ability to send a view action, we receive the result and store it, cool, now we need to use this store somewhere and show some UI already.</p>
+
+<h2>Application</h2>
+
+<p>Having a store and a state brings up a tricky question: who should listen to its changes and who should use its state? Following the React philosophy we should find the component at the topmost of our view&rsquo;s tree, without bloating the component itself though. As far as session goes I think the best place is the root of our app. The root is the first component that is mounted by the routes, and if you take a look at our routes, that would be SmallApp:
+```javascript
+// ./scripts/components/SmallApp.react.jsx
+var React = require(&lsquo;react&rsquo;);
+var RouteHandler = require(&lsquo;react-router&rsquo;).RouteHandler;
+var Header = require(&lsquo;../components/Header.react.jsx&rsquo;);
+var SessionStore = require(&lsquo;../stores/SessionStore.react.jsx&rsquo;);
+var RouteStore = require(&lsquo;../stores/RouteStore.react.jsx&rsquo;);</p>
+
+<p>function getStateFromStores() {
+  return {</p>
+
+<pre><code>isLoggedIn: SessionStore.isLoggedIn(),
+email: SessionStore.getEmail()
+</code></pre>
+
+<p>  };
+}</p>
+
+<p>var SmallApp = React.createClass({</p>
+
+<p>  getInitialState: function() {</p>
+
+<pre><code>return getStateFromStores();
+</code></pre>
+
+<p>  },</p>
+
+<p>  componentDidMount: function() {</p>
+
+<pre><code>SessionStore.addChangeListener(this._onChange);
+</code></pre>
+
+<p>  },</p>
+
+<p>  componentWillUnmount: function() {</p>
+
+<pre><code>SessionStore.removeChangeListener(this._onChange);
+</code></pre>
+
+<p>  },</p>
+
+<p>  _onChange: function() {</p>
+
+<pre><code>this.setState(getStateFromStores());
+</code></pre>
+
+<p>  },</p>
+
+<p>  render: function() {</p>
+
+<pre><code>return (
+  &lt;div className="app"&gt;
+    &lt;Header 
+      isLoggedIn={this.state.isLoggedIn}
+      email={this.state.email} /&gt;
+    &lt;RouteHandler/&gt;
+  &lt;/div&gt;
+);
+</code></pre>
+
+<p>  }</p>
+
+<p>});</p>
+
+<p>module.exports = SmallApp;
+```
+This is a really simple component that serves as the root layout. If you take a look at the render function you can see that it only renders a React component named Header and then mounts the content of the Router. The header has a couple of properties though (React props to be exact) and we fill them using the SmallApp state. Those props will be accessible from the Header component. The  SmallApp state is obtained by querying the SessionStore.</p>
+
+<h2>LoginPage</h2>
+
+<h2>RegisterPage</h2>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API - Part 1]]></title>
+    <link href="http://andreamazz.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/"/>
+    <updated>2015-01-28T16:04:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve been working on a frontend for a project we are developing over at Fancy Pixel. We are embracing what looks like a good habit: slicing the monolithic Rails app in a backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn&rsquo;t. There&rsquo;s something about it that doesn&rsquo;t sit right with me, I wouldn&rsquo;t go in detail, since many others already did, but let&rsquo;s just say that there&rsquo;s too much magic involved for my tastes (says the guy using Rails). I can&rsquo;t deny that the major structural changes introduced in 2.0 were the last nail in the coffin. I wanted to try something new, something that would enforce a solid architecture of my app, letting me control the single parts. React got a lot of good press in the past months, so I took the chance to dive in. Here you&rsquo;ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
+
+<!-- More -->
+
+
+<h2>Choosing the backend</h2>
+
+<p>Given our experience, the obvious choice for us was Rails, but with a twist: rails-api. Rails-api is a stripped down version of Rails, where most of the &lsquo;useless&rsquo; middleware is not included (but you can iclude it if you need it). Using Rails to serve JSON might seem overkill, but the Github page of rails-api has some really good points to counter this argument.</p>
+
+<h2>The frontend technology</h2>
+
+<p>The real meat of this post, I picked React for building the views. React is javascript library for building user interfaces built and open sourced by the Facebook&rsquo;s engineers. Its major selling point is the ability to provide a dynamic and fast way to build isomorphic apps. Isomorphic means that the app can be rendered with ease on both the server and the client, which helps with SEO. I&rsquo;ll be honest, I don&rsquo;t give a flying f&hellip; udge about SEO, I was sold by the Virtual DOM and how the data is organized and handled in React views.
+The Virtual DOM is something that we&rsquo;re going to see implemented in other JS frameworks (Ember does that already if I&rsquo;m not mistaken). The views can be rendered on the server for the initial request, than the underliyng tech is going to render subsequent pages in a Virtual DOM, that is then diffed with the actual DOM, and then only the differences are changes in the visible page. And it&rsquo;s fast. Brilliant.</p>
+
+<h2>Flux</h2>
+
+<p>This covers the backend and the views, we&rsquo;re missing something in between, say, an architecture to follow. Flux is an architecture for building web UIs, and works really well in compination with React, but it can really be applied anywhere.</p>
+
+<h2>Here comes trouble</h2>
+
+<p>I never was a big fan of implementing web UI, CSS always gets messy, Javascript files become scary monoliths where crappy code goes to die, while developers test their spelunker skills and loose their sanity. Maybe I&rsquo;m just crap, but even using Sass anc Coffee/Typescript never really solved my issues. I was excited to try something really new, little did I know that using bleeding edge tech is a pain in the butt. Ok, I DID now that, but I was naive enough to think that maybe this time everything was going to be different.
+The PITA was learning and being productive. It took a while, there&rsquo;s still not a clear &ldquo;best practice&rdquo; to perform common tasks, nor a clear starting configuration. Let&rsquo;s put it that way, if you come from the RoR world, where convention over configuration greatly reduced boilerplating and &ldquo;forced&rdquo; you to follow commonly established best practice, you&rsquo;re going to struggle with Flux. Hey, I figured it out, so it&rsquo;s not that big of a deal.</p>
+
+<h1>Getting it all toghether</h1>
+
+<p>Let&rsquo;s start writing some code. We&rsquo;ll go through a simple Rails app, it will feature user signup and login, and the ability to post a story. Just like Medium, but in a smaller size. Let&rsquo;s call it Small. Feel free to skip the Railsy part if you&rsquo;re only interested in Flux and React.</p>
+
+<h1>Rails API</h1>
+
+<p>A while ago I stumbled upon <a href="http://slides.com/alanpeabody/breaking-up-with-the-asset-pipeline#/">this article</a> by Alan Peabody. I had a similar experience as him, as the title say, I too feel the need to break up with Rails' asset pipeline and make Rails beautiful again. We&rsquo;ll be using the rails-api gem. You can generate a new app with its CLI command, or you can integrate it later. I&rsquo;ll do the later option, no reason really, just a habit.
+<code>
+rails new small
+</code>
+Next we&rsquo;ll add rails-api, devise, active model serializers gems to our gemfile, and while we are at it we can remove all the gems that generate assets or view content, jbuilder included. Our Gemfile should look like this (test section omitted):
+```ruby
+source &lsquo;<a href="https://rubygems.org">https://rubygems.org</a>&rsquo;</p>
+
+<p>gem &lsquo;rails&rsquo;, &lsquo;4.2.0&rsquo;
+gem &lsquo;rails-api&rsquo;, &lsquo;~> 0.4.0&rsquo;
+gem &lsquo;active_model_serializers&rsquo;, &lsquo;~> 0.8.3&rsquo; # NOTE: not the 0.9
+gem &lsquo;devise&rsquo;, &lsquo;~> 3.4.1&rsquo;
+gem &lsquo;sqlite3&rsquo;
+gem &lsquo;sdoc&rsquo;, &lsquo;~> 0.4.0&rsquo;, group: :doc</p>
+
+<p>group :development, :test do
+  gem &lsquo;byebug&rsquo;
+  gem &lsquo;web-console&rsquo;, &lsquo;~> 2.0&rsquo;
+  gem &lsquo;spring&rsquo;
+end
+<code>
+Now we need to change the application controller so that it inherits from ActionController::API, and kiss the protect_From_forgery goodbye. Since we are serving only JSON, it makes sense to add
+</code>ruby
+respond_to :json
+```
+to the applciation controller, helps DRYing all out.</p>
+
+<h2>Authentication</h2>
+
+<p>Should I first define a resurce? Maybe, but that&rsquo;s trivial, let&rsquo;s get the authentication out of the way. We are building an API, so no session will be involved, we have to authenticate the user in each request. I&rsquo;ll be using <a href="http://oauthlib.readthedocs.org/en/latest/oauth2/grants/password.html">Oauth2 Resource Owner Password Credentials Grant</a> which sounds fancy, but it&rsquo;s really just a token in the request header that authenticates the caller. The gem Devise used to implement a token_authenticatable strategy, but it was pulled for security reason. There are gems that implement the strategy (like Doorkeeper), but since it&rsquo;s fairly easy to implement I&rsquo;ll do it for myself. Let&rsquo;s install Devise first by adding it in the Gemfile and launching <code>rails generate devise:install</code> after a <code>bundle install</code>, then we create the user model:
+<code>ruby
+rails generate devise User
+</code></p>
+
+<h2>Token authentication</h2>
+
+<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two information: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for semplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
+First things first, we&rsquo;ll add an access_token to the user:
+```ruby
+class AddAccessTokenToUser &lt; ActiveRecord::Migration
+  def change</p>
+
+<pre><code>add_column :users, :access_token, :string
+</code></pre>
+
+<p>  end
+end
+<code>
+and here's the User model:
+</code>ruby
+class User &lt; ActiveRecord::Base
+  devise :database_authenticatable, :recoverable, :validatable</p>
+
+<p>  after_create :update_access_token!</p>
+
+<p>  private</p>
+
+<p>  def update_access_token!</p>
+
+<pre><code>self.access_token = generate_access_token
+save
+</code></pre>
+
+<p>  end</p>
+
+<p>  def generate_access_token</p>
+
+<pre><code>loop do
+  token = "#{self.id}:#{Devise.friendly_token}"
+  break token unless User.where(access_token: token).first
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>end
+<code>
+The user authentication will sit in the application controller:
+</code>ruby
+class ApplicationController &lt; ActionController::API
+  before_action :authenticate_user_from_token!
+  include AbstractController::Translation</p>
+
+<p>  respond_to :json</p>
+
+<p>  ##
+  # User Authentication
+  # Authenticates the user with OAuth2 Resource Owner Password Credentials Grant
+  def authenticate_user_from_token!</p>
+
+<pre><code>auth_token = request.headers['Authorization']
+
+if auth_token
+  authenticate_with_auth_token auth_token
+else
+  authentication_error
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def authenticate_with_auth_token auth_token</p>
+
+<pre><code>unless auth_token.include?(':')
+  authentication_error
+  return
+end
+
+user_id = auth_token.split(':').first
+user = User.where(id: user_id).first
+
+if user &amp;&amp; Devise.secure_compare(user.access_token, auth_token)
+  # User can access
+  sign_in user, store: false
+else
+  authentication_error
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  ##
+  # Authentication Failure
+  # Renders a 401 error
+  def authentication_error</p>
+
+<pre><code># User's token is either invalid or not in the right format
+render json: {error: t('application_controller.unauthorized')}, status: 401  # Authentication timeout
+</code></pre>
+
+<p>  end
+end
+<code>
+We conclude the auth process by providing the routes and the session controller:
+</code>ruby
+Rails.application.routes.draw do
+  devise_for :user, only: []</p>
+
+<p>  namespace :v1, defaults: { format: :json } do</p>
+
+<pre><code>resource :login, only: [:create], controller: :sessions
+</code></pre>
+
+<p>  end
+end
+<code>
+and the session controller:
+</code>ruby</p>
+
+<h1>app/controllers/v1/sessions_controller.rb</h1>
+
+<p>module V1
+  class SessionsController &lt; ApplicationController</p>
+
+<pre><code>skip_before_action :authenticate_user_from_token!
+
+# POST /v1/login
+def create
+  @user = User.find_for_database_authentication(email: params[:username])
+  return invalid_login_attempt unless @user
+
+  if @user.valid_password?(params[:password])
+    sign_in :user, @user
+    render json: @user, serializer: SessionSerializer, root: nil
+  else
+    invalid_login_attempt
+  end
+end
+
+private
+
+def invalid_login_attempt
+  warden.custom_failure!
+  render json: {error: t('sessions_controller.invalid_login_attempt')}, status: :unprocessable_entity
+end
+</code></pre>
+
+<p>  end
+end
+<code>
+The SessionSerializer is an Active Model Serializer object, something like this:
+</code>ruby</p>
+
+<h1>app/serializers/v1/session_serializer.rb</h1>
+
+<p>module V1
+  class SessionSerializer &lt; ActiveModel::Serializer</p>
+
+<pre><code>attributes :email, :token_type, :user_id, :access_token
+
+def user_id
+  object.id
+end
+
+def token_type
+  'Bearer'
+end
+</code></pre>
+
+<p>  end
+end
+<code>
+That's it. Migrate, run the server, and create a user via the console. You should get something like this:
+</code>
+$ curl localhost:3002/v1/login &mdash;data &ldquo;username=user@example.com&amp;password=password&rdquo;
+{
+  &ldquo;token_type&rdquo;: &ldquo;Bearer&rdquo;,
+  &ldquo;user_id&rdquo;: 1,
+  &ldquo;access_token&rdquo;: &ldquo;1:MPSMSopcQQWr-LnVUySs&rdquo;
+}
+```</p>
+
+<h2>Creating a resource</h2>
+
+<p>I won&rsquo;t go in detail here, the task is just plain RoR. We&rsquo;ll create a Story resource and a controller that will handle the user creation. You&rsquo;ll find the complete rails app in this repo. Moving on.</p>
+
+<h2>CORS</h2>
+
+<h2>Next up</h2>
+
+<p>For readability I&rsquo;ll split the article here, jump here to start building the frontend.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Small updates]]></title>
@@ -311,225 +1088,6 @@ The first line is pretty self explanatory, the second one just tells the system 
 <p>Until next time.</p>
 
 <p>Andrea</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Rails Test setup]]></title>
-    <link href="http://andreamazz.github.io/blog/2014/01/05/rails-test-setup/"/>
-    <updated>2014-01-05T19:20:00+01:00</updated>
-    <id>http://andreamazz.github.io/blog/2014/01/05/rails-test-setup</id>
-    <content type="html"><![CDATA[<p>Here&rsquo;s how I usually setup my test environment on Rails. I&rsquo;m using mainly RSpec and Capybara, so nothing new under the sun, but this should provide a mindless copy and paste to get you (mainly me) started.</p>
-
-<!-- more -->
-
-
-<p>First of all, the gems used. This configuration is in part taken from the book <a href="https://leanpub.com/everydayrailsrspec">&ldquo;Testing with RSpec&rdquo;</a> by Aaron Summer:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>Gemfile </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">group</span> <span class="ss">:development</span><span class="p">,</span> <span class="ss">:test</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">rspec</span><span class="o">-</span><span class="n">rails</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">factory_girl_rails</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">rb</span><span class="o">-</span><span class="n">fsevent</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="nb">require</span><span class="p">:</span> <span class="kp">false</span> <span class="k">if</span> <span class="no">RUBY_PLATFORM</span> <span class="o">=~</span> <span class="sr">/darwin/i</span> <span class="c1"># only on OSX</span>
-</span><span class='line'>  <span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">guard</span><span class="o">-</span><span class="n">rspec</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
-</span><span class='line'><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;group :test do</span>
-</span><span class='line'><span class="sr">  gem &amp;lsquo;shoulda-matchers&amp;rsquo;</span>
-</span><span class='line'><span class="sr">  gem &amp;lsquo;faker&amp;rsquo;</span>
-</span><span class='line'><span class="sr">  gem &amp;lsquo;capybara&amp;rsquo;</span>
-</span><span class='line'><span class="sr">  gem &amp;lsquo;poltergeist&amp;rsquo;</span>
-</span><span class='line'><span class="sr">  gem &amp;lsquo;database_cleaner&amp;rsquo;  # DatabaseCleaner required to test user authentication protected routes</span>
-</span><span class='line'><span class="sr">  gem &amp;lsquo;launchy&amp;rsquo; # Provides the awesome save_and_open_page method in your capybara specs</span>
-</span><span class='line'><span class="sr">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>A pretty basic setup, RSpec with shoulda matchers, FactoryGirl + Faker for cool mocks and Capybara with Poltergeist as webdriver.</p>
-
-<p>You might want to install PhantomJS (used by Poltergeist). In Mac OSX you can just use brew:</p>
-
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>brew install phantomjs</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>With that out of the way the next step is to setup RSpec
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rails g rspec:install</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>I like to customize rspec with the dotted (or the <code>documentation</code> if I&rsquo;m feeling verbose) and colored notation by adding a .rspec file.
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>.rspec </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&mdash;color &mdash;format progress</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>Then I&rsquo;ll customize the generators:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>config/application.rb </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">generators</span> <span class="k">do</span> <span class="o">|</span><span class="n">g</span><span class="o">|</span>
-</span><span class='line'>  <span class="n">g</span><span class="o">.</span><span class="n">test_framework</span> <span class="ss">:rspec</span><span class="p">,</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;fixtures: true,</span>
-</span><span class='line'><span class="sr">view_specs: false,</span>
-</span><span class='line'><span class="sr">helper_specs: false,</span>
-</span><span class='line'><span class="sr">routing_specs: true,</span>
-</span><span class='line'><span class="sr">controller_specs: true,</span>
-</span><span class='line'><span class="sr">request_specs: false</span>
-</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;  g.fixture_replacement :factory_girl, dir: &amp;lsquo;spec/</span><span class="n">factories</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>As you can see I let the generator create the fixtures (using FactoryGirl) and the controller and routes specs. I create models and request spec manually, and I don&rsquo;t care for view specs.</p>
-
-<p>That&rsquo;s about it for Rails, the next step is to do some adjustments to the spec_helper:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>spec/spec_helper_.rb </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">ENV</span><span class="o">[&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">RAILS_ENV</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span><span class="o">]</span> <span class="o">||=</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="nb">test</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
-</span><span class='line'><span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">.</span><span class="n">.</span><span class="o">/.</span><span class="n">.</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">environment</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="no">FILE</span><span class="o">&lt;</span><span class="sr">/strong&gt;)</span>
-</span><span class='line'><span class="sr">require &amp;lsquo;rspec/</span><span class="n">rails</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;h1&gt;require &amp;lsquo;rspec/</span><span class="n">autorun</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span> <span class="c1">#removed to support Zeus&lt;/h1&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="nb">require</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">capybara</span><span class="o">/</span><span class="n">poltergeist</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;Dir[Rails.root.join(&amp;ldquo;spec/su</span><span class="n">pport</span><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;*/&lt;</span><span class="sr">/em&gt;.rb&amp;rdquo;)].each { |f| require f }&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span><span class="o">.</span><span class="n">check_pending!</span> <span class="k">if</span> <span class="n">defined?</span><span class="p">(</span><span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;RSpec.configure do |config|&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">include</span> <span class="ss">FactoryGirl</span><span class="p">:</span><span class="ss">:Syntax</span><span class="o">::</span><span class="no">Methods</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">filter_run_excluding</span> <span class="ss">slow</span><span class="p">:</span> <span class="kp">true</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">fixture_path</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="c1">#{::Rails.root}/spec/fixtures&amp;rdquo;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="no">Capybara</span><span class="o">.</span><span class="n">javascript_driver</span> <span class="o">=</span> <span class="ss">:poltergeist</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;  # DatabaseCleaner required to test user authentication protected routes</span>
-</span><span class='line'><span class="sr">  config.use_transactional_fixtures = false&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:suite</span><span class="p">)</span> <span class="k">do</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;DatabaseCleaner.strategy = :truncation</span>
-</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;DatabaseCleaner.start</span>
-</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="ss">:each</span><span class="p">)</span> <span class="k">do</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;DatabaseCleaner.clean</span>
-</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="n">config</span><span class="o">.</span><span class="n">infer_base_class_for_anonymous_controllers</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">random</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>This sets up DatabaseCleaner and the webdriver for Capybara. It also tells  RSpec to skip tests marked as <code>:slow</code>.</p>
-
-<h4>Other goodies</h4>
-
-<p>Almost there, now it&rsquo;s time to setup a couple of tools that makes testing less cumbersome.
-First of all, let&rsquo;s setup <a href="https://github.com/guard/guard">Guard</a>.
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>guard init rspec</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>&hellip; and that&rsquo;s about it.</p>
-
-<p>Let&rsquo;s finish off by configuring <a href="https://github.com/burke/zeus">Zeus</a> if needed (or wanted). That&rsquo;s pretty straightforward, we just need to change the test environment command in the zeus.json generated by <code>zeus init</code>:
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>zeus.json </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">test_environment</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;:</span> <span class="p">{</span>
-</span><span class='line'>  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">test_helper</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;:</span> <span class="p">{</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="nb">test</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;:</span> <span class="o">[&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">rspec</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span><span class="o">]</span><span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
-
-<p>And that should be it, therefore
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">expect</span><span class="p">(</span><span class="n">post</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be_helpful</span> <span class="c1"># I&amp;rsquo;m quite the commedian</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 ]]></content>
   </entry>
   
