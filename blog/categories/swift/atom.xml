@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: swift | Syntax Error]]></title>
+  <link href="http://andreamazz.github.io/blog/categories/swift/atom.xml" rel="self"/>
+  <link href="http://andreamazz.github.io/"/>
+  <updated>2015-03-18T16:56:57+01:00</updated>
+  <id>http://andreamazz.github.io/</id>
+  <author>
+    <name><![CDATA[Andrea Mazzini]]></name>
+    <email><![CDATA[andrea@fancypixel.it]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Custom UIRefreshControl animation]]></title>
+    <link href="http://andreamazz.github.io/blog/2015/03/18/custom-uirefreshcontrol-animation/"/>
+    <updated>2015-03-18T16:24:00+01:00</updated>
+    <id>http://andreamazz.github.io/blog/2015/03/18/custom-uirefreshcontrol-animation</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve playing around with Swift in the last month, finally. I&rsquo;m still an order of magnitude faster when writing in Objective-C, but so far I&rsquo;m mostly enjoying what I see, so much that I started to use a mix of both languages in production. There&rsquo;s still a lot of stuff that doesn&rsquo;t work properly though, but it is to be expected. To test the waters I&rsquo;ve built a simple app in Swift that uses Realm to share data between the main app, a Today extension and a WatchKit app. It&rsquo;ll be open source, and I&rsquo;m planning to write a blog post on <a href="http://fancypixel.github.io">our main blog</a> in the next few days.
+In the meantime I just wanted to share a simple demo project that I wrote after stumbling upon this brilliant <a href="https://dribbble.com/shots/1974767-gear-powered-pull-to-refresh-animation">Dribble shot</a>.</p>
+
+<p>You&rsquo;ll find the demo project with the implementation of that animation <a href="https://github.com/andreamazz/GearRefreshControl">here</a>.</p>
+]]></content>
+  </entry>
+  
+</feed>

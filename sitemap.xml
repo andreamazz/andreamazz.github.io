@@ -56,25 +56,17 @@
     </url>
     <url>
         <loc>
-            http://andreamazz.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/
-        </loc>
-        <lastmod>2015-01-29T16:36:30+01:00</lastmod>
-    </url>
-    <url>
-        <loc>
-            http://andreamazz.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/
-        </loc>
-        <lastmod>2015-01-30T10:48:01+01:00</lastmod>
-    </url>
-    <url>
-        <loc>
             http://andreamazz.github.io/blog/2015/02/04/react-plus-flux-backed-by-rails-api/
         </loc>
         <lastmod>2015-02-04T11:02:41+01:00</lastmod>
     </url>
     <url>
+        <loc>http://andreamazz.github.io/blog/2015/03/18/custom-uirefreshcontrol-animation/</loc>
+        <lastmod>2015-03-18T16:56:25+01:00</lastmod>
+    </url>
+    <url>
         <loc>http://andreamazz.github.io/blog/archives/</loc>
-        <lastmod>2015-02-04T11:02:41+01:00</lastmod>
+        <lastmod>2015-03-18T16:56:25+01:00</lastmod>
     </url>
     <url>
         <loc>http://andreamazz.github.io/blog/categories/</loc>
@@ -82,11 +74,11 @@
     </url>
     <url>
         <loc>http://andreamazz.github.io/</loc>
-        <lastmod>2015-02-04T11:02:41+01:00</lastmod>
+        <lastmod>2015-03-18T16:56:25+01:00</lastmod>
     </url>
     <url>
         <loc>http://andreamazz.github.io/posts/</loc>
-        <lastmod>2015-02-04T11:02:41+01:00</lastmod>
+        <lastmod>2015-03-18T16:56:25+01:00</lastmod>
     </url>
     <url>
         <loc>http://andreamazz.github.io/robots.txt</loc>
